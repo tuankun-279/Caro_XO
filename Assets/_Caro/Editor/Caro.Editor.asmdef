@@ -1,0 +1,24 @@
+{
+    "name": "Caro.Editor",
+    "rootNamespace": "Caro.EditorTools",
+    "references": [
+        "Caro.Core",
+        "Caro.AI",
+        "Caro.Game",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "UnityEditor.TestRunner",
+        "UnityEngine.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

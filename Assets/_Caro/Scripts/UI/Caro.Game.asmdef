@@ -1,0 +1,21 @@
+{
+    "name": "Caro.Game",
+    "rootNamespace": "Caro.Game",
+    "references": [
+        "Caro.Core",
+        "Caro.AI",
+        "UniTask",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

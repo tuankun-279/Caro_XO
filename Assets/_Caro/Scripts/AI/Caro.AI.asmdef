@@ -1,0 +1,16 @@
+{
+    "name": "Caro.AI",
+    "rootNamespace": "Caro.AI",
+    "references": [
+        "Caro.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}
