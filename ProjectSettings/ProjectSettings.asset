@@ -167,7 +167,8 @@ PlayerSettings:
   androidMinAspectRatio: 1
   applicationIdentifier:
     Android: com.lokikun.caro
-    Standalone: com.DefaultCompany.2D-URP
+    Standalone: com.lokikun.caro
+    iPhone: com.lokikun.caro
   buildNumber:
     Standalone: 0
     VisionOS: 0
