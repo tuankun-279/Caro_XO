@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 9dfa6fbf37c4fe543986f6a25291454f
+guid: e776478465a6f384eb9bb8a71ed92fcd
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 2984081564515983306
-    second: notebook_background_with_spiral_0
+      213: 6798361667234391367
+    second: doodle_star_outline_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -52,7 +52,7 @@ TextureImporter:
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 100
-  spriteBorder: {x: 40, y: 18, z: 18, w: 20}
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 1
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: notebook_background_with_spiral_0
+      name: doodle_star_outline_0
       rect:
         serializedVersion: 2
-        x: 5
-        y: 5
-        width: 169
-        height: 238
+        x: 0
+        y: 0
+        width: 512
+        height: 484
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: acf54c16f56996920800000000000000
-      internalID: 2984081564515983306
+      spriteID: 7456326cae1a85e50800000000000000
+      internalID: 6798361667234391367
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      notebook_background_with_spiral_0: 2984081564515983306
+      doodle_star_outline_0: 6798361667234391367
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

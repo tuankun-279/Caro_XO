@@ -39,7 +39,7 @@ namespace Caro.EditorTools
             ("panels/blank_paper_panel", new Vector4(30, 30, 30, 30)),
             ("panels/player_robot_score_banner_only", new Vector4(24, 24, 24, 24)),
             ("panels/mode_card_", new Vector4(110, 110, 110, 110)),
-            ("backgrounds/notebook_background_with_spiral", new Vector4(40, 18, 18, 20)),
+            ("backgrounds/bg_page_frame", new Vector4(120, 120, 120, 120)),
         };
 
         private static TMP_FontAsset _font;
@@ -375,17 +375,76 @@ namespace Caro.EditorTools
             return rt;
         }
 
-        /// <summary>Full-screen notebook page (spiral on the left) behind a screen; blocks clicks to what is below.</summary>
+        /// <summary>
+        /// Full-screen notebook page behind a screen, built in layers so it stays sharp on any screen size:
+        /// repeated grid paper, a 9-sliced page edge, the spiral binding repeated down the left edge and
+        /// loose doodles placed relative to the page. Blocks clicks to what is below.
+        /// </summary>
         private static void Background(RectTransform screen)
         {
             var rt = Stretch(screen, "Background");
             rt.offsetMin = new Vector2(18, 18);
             rt.offsetMax = new Vector2(-18, -18);
-            var img = rt.gameObject.AddComponent<Image>();
-            img.sprite = Spr("backgrounds/notebook_background_with_spiral");
-            img.type = Image.Type.Sliced;
-            img.pixelsPerUnitMultiplier = 0.25f;
-            img.raycastTarget = true;
+
+            // Grid paper: one tile holds 7 × 7 cells and is shown 504 units wide (72 units per cell)
+            var paper = Stretch(rt, "Paper");
+            paper.offsetMin = new Vector2(20, 20);
+            paper.offsetMax = new Vector2(-20, -20);
+            var paperImg = paper.gameObject.AddComponent<Image>();
+            paperImg.sprite = Spr("backgrounds/bg_paper_tile");
+            paperImg.type = Image.Type.Tiled;
+            paperImg.pixelsPerUnitMultiplier = paperImg.sprite.rect.width / 504f;
+            paperImg.raycastTarget = true;
+
+            // Page edge: transparent inside, its 80 px band shown about 27 units wide
+            var edge = Stretch(rt, "PageEdge");
+            var edgeImg = edge.gameObject.AddComponent<Image>();
+            edgeImg.sprite = Spr("backgrounds/bg_page_frame");
+            edgeImg.type = Image.Type.Sliced;
+            edgeImg.pixelsPerUnitMultiplier = 3f;
+            edgeImg.raycastTarget = false;
+
+            // Spiral binding: one tile holds two rings, repeated from top to bottom over the left edge
+            const float spiralWidth = 80f;
+            var spiral = new GameObject("Spiral", typeof(RectTransform), typeof(Image));
+            var srt = (RectTransform)spiral.transform;
+            srt.SetParent(rt, false);
+            srt.anchorMin = new Vector2(0, 0);
+            srt.anchorMax = new Vector2(0, 1);
+            srt.pivot = new Vector2(0.5f, 0.5f);
+            srt.sizeDelta = new Vector2(spiralWidth, -60);
+            srt.anchoredPosition = new Vector2(22, 0);
+            var spiralImg = spiral.GetComponent<Image>();
+            spiralImg.sprite = Spr("backgrounds/notebook_spiral_tile");
+            spiralImg.type = Image.Type.Tiled;
+            spiralImg.pixelsPerUnitMultiplier = spiralImg.sprite.rect.width / spiralWidth;
+            spiralImg.raycastTarget = false;
+
+            // Doodles, placed as fractions of the page so they keep their spots on any aspect ratio
+            Deco(rt, "PaperPlane", "doodles/doodle_paper_plane", 0.80f, 0.09f, 190, 0, 1f);
+            Deco(rt, "PaperPlaneFaint", "doodles/doodle_paper_plane", 0.22f, 0.46f, 120, -12, 0.35f);
+            Deco(rt, "Star", "doodles/doodle_star_outline", 0.90f, 0.33f, 80, 8, 1f);
+            Deco(rt, "Star2", "doodles/doodle_star_outline", 0.88f, 0.69f, 64, -12, 1f);
+            Deco(rt, "Swoosh", "doodles/doodle_swoosh", 0.80f, 0.90f, 260, 0, 1f);
+        }
+
+        /// <summary>A background doodle anchored at a fraction of its parent (x from the left, y from the top).</summary>
+        private static void Deco(RectTransform parent, string name, string path, float ax, float ay, float size, float angle, float alpha)
+        {
+            var sprite = Spr(path);
+            float aspect = sprite.rect.width / sprite.rect.height;
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image));
+            var r = (RectTransform)go.transform;
+            r.SetParent(parent, false);
+            r.anchorMin = r.anchorMax = new Vector2(ax, 1 - ay);
+            r.sizeDelta = aspect >= 1 ? new Vector2(size, size / aspect) : new Vector2(size * aspect, size);
+            r.anchoredPosition = Vector2.zero;
+            r.localRotation = Quaternion.Euler(0, 0, angle);
+            var img = go.GetComponent<Image>();
+            img.sprite = sprite;
+            img.preserveAspect = true;
+            img.raycastTarget = false;
+            img.color = new Color(1, 1, 1, alpha);
         }
 
         /// <summary>A full-width block glued to the top or bottom edge; its mint fill masks the zoomed board.</summary>
