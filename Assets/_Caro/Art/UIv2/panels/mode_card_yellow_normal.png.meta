@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 3bb2f27e11411e24d8eb7b2843b38213
+guid: e4ebfd3f851ebdc4cbe389547cc59b4e
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 94131152327721923
-    second: mode_card_blue_players_blank_frame_0
+      213: 9097697629031506336
+    second: mode_card_yellow_normal_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -52,7 +52,7 @@ TextureImporter:
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 100
-  spriteBorder: {x: 36, y: 36, z: 36, w: 36}
+  spriteBorder: {x: 110, y: 110, z: 110, w: 110}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 1
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: mode_card_blue_players_blank_frame_0
+      name: mode_card_yellow_normal_0
       rect:
         serializedVersion: 2
-        x: 1
-        y: 5
-        width: 253
-        height: 191
+        x: 2
+        y: 2
+        width: 791
+        height: 356
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3c3cac8c8cb6e4100800000000000000
-      internalID: 94131152327721923
+      spriteID: 0a1265cbac3814e70800000000000000
+      internalID: 9097697629031506336
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      mode_card_blue_players_blank_frame_0: 94131152327721923
+      mode_card_yellow_normal_0: 9097697629031506336
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
