@@ -404,21 +404,26 @@ namespace Caro.EditorTools
             edgeImg.pixelsPerUnitMultiplier = 3f;
             edgeImg.raycastTarget = false;
 
-            // Spiral binding: one tile holds two rings, repeated from top to bottom over the left edge
-            const float spiralWidth = 80f;
-            var spiral = new GameObject("Spiral", typeof(RectTransform), typeof(Image));
-            var srt = (RectTransform)spiral.transform;
-            srt.SetParent(rt, false);
-            srt.anchorMin = new Vector2(0, 0);
-            srt.anchorMax = new Vector2(0, 1);
-            srt.pivot = new Vector2(0.5f, 0.5f);
-            srt.sizeDelta = new Vector2(spiralWidth, -60);
-            srt.anchoredPosition = new Vector2(22, 0);
-            var spiralImg = spiral.GetComponent<Image>();
-            spiralImg.sprite = Spr("backgrounds/notebook_spiral_tile");
-            spiralImg.type = Image.Type.Tiled;
-            spiralImg.pixelsPerUnitMultiplier = spiralImg.sprite.rect.width / spiralWidth;
-            spiralImg.raycastTarget = false;
+            // Spiral binding, repeated from top to bottom over the left edge. Only built once the
+            // tileable coil art (backgrounds/notebook_spiral_coil.png) is in the project.
+            var coil = AssetDatabase.LoadAssetAtPath<Sprite>(Art + "backgrounds/notebook_spiral_coil.png");
+            if (coil != null)
+            {
+                const float spiralWidth = 80f;
+                var spiral = new GameObject("Spiral", typeof(RectTransform), typeof(Image));
+                var srt = (RectTransform)spiral.transform;
+                srt.SetParent(rt, false);
+                srt.anchorMin = new Vector2(0, 0);
+                srt.anchorMax = new Vector2(0, 1);
+                srt.pivot = new Vector2(0.5f, 0.5f);
+                srt.sizeDelta = new Vector2(spiralWidth, -60);
+                srt.anchoredPosition = new Vector2(22, 0);
+                var spiralImg = spiral.GetComponent<Image>();
+                spiralImg.sprite = coil;
+                spiralImg.type = Image.Type.Tiled;
+                spiralImg.pixelsPerUnitMultiplier = coil.rect.width / spiralWidth;
+                spiralImg.raycastTarget = false;
+            }
 
             // Doodles, placed as fractions of the page so they keep their spots on any aspect ratio
             Deco(rt, "PaperPlane", "doodles/doodle_paper_plane", 0.80f, 0.09f, 190, 0, 1f);
