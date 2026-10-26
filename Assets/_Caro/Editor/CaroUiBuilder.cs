@@ -9,7 +9,7 @@ namespace Caro.EditorTools
 {
     /// <summary>
     /// Builds the five screens of the redesign (menu, mode selection, game, result, settings) from the
-    /// art set in Assets/_Caro/Art/UIv2 (designer deliveries "Caro_xo_optimized" and "Caro_XO_Assets_Round2", cleaned and trimmed).
+    /// art set in Assets/_Caro/Art/UIv2 (designer deliveries "Caro_xo_optimized", "Caro_XO_Assets_Round2" and "Round3", cleaned and trimmed).
     /// Every visible UI element is an art asset or text; nothing is drawn in code. Positions are in
     /// mockup pixels on a 1080 × 1920 canvas, measured from the top-left corner (or from the bottom for
     /// bottom-anchored blocks). Re-running it replaces the previous build.
@@ -33,6 +33,7 @@ namespace Caro.EditorTools
             ("buttons/", new Vector4(70, 70, 70, 70)),
             ("controls/slider_track_", new Vector4(32, 0, 32, 0)),
             ("panels/notebook_note", new Vector4(100, 80, 60, 80)),
+            ("panels/score_panel", new Vector4(80, 50, 50, 50)),
             ("panels/blank_notebook_panel_small", new Vector4(40, 40, 40, 40)),
             ("panels/blank_notebook_panel", new Vector4(44, 36, 36, 36)),
             ("panels/blank_paper_panel", new Vector4(30, 30, 30, 30)),
@@ -215,7 +216,7 @@ namespace Caro.EditorTools
             var undo = Btn(bottom, "UndoButton", "gray", 300, 1450, 420, 110, "Đi lại", null, 0, 46, fromBottom: true);
             var newGame = Btn(bottom, "NewGameButton", "yellow", 780, 1450, 420, 110, "Ván mới", "icons/replay", 50, 42, fromBottom: true);
             Txt(bottom, "ScoreTitle", "Tỉ số", 110, 1555, 300, 70, 46, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true, fromBottom: true);
-            Sliced(bottom, "ScorePanel", "panels/player_robot_score_banner_only", 540, 1740, 780, 280, 0.5f, fromBottom: true);
+            Sliced(bottom, "ScorePanel", "panels/score_panel", 540, 1740, 780, 280, 0, fromBottom: true);
             var leftName = Txt(bottom, "LeftName", "Bạn (X)", 330, 1690, 340, 60, 40, Ink, TextAlignmentOptions.Center, fromBottom: true);
             var leftScore = Txt(bottom, "LeftScore", "0", 330, 1780, 200, 90, 70, Red, TextAlignmentOptions.Center, fromBottom: true);
             Txt(bottom, "Dash", "–", 540, 1760, 80, 80, 64, Ink, TextAlignmentOptions.Center, fromBottom: true);
@@ -271,7 +272,7 @@ namespace Caro.EditorTools
             var art = Pic(safe, "Art", "results/trophy_celebration", 560, 820, 480);
             art.rectTransform.sizeDelta = new Vector2(480, 420); // fixed box; lose/draw art keeps its own aspect inside
 
-            Sliced(safe, "ScorePanel", "panels/player_robot_score_banner_only", 560, 1160, 660, 230, 0.5f);
+            Sliced(safe, "ScorePanel", "panels/score_panel", 560, 1160, 660, 230, 0);
             var leftName = Txt(safe, "LeftName", "Bạn (X)", 400, 1105, 300, 60, 40, Ink, TextAlignmentOptions.Center);
             var rightName = Txt(safe, "RightName", "Máy (O)", 720, 1105, 300, 60, 40, Ink, TextAlignmentOptions.Center);
             var leftScore = Txt(safe, "LeftScore", "0", 400, 1190, 200, 100, 80, Blue, TextAlignmentOptions.Center);
