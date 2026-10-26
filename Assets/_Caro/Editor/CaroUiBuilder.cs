@@ -9,7 +9,7 @@ namespace Caro.EditorTools
 {
     /// <summary>
     /// Builds the five screens of the redesign (menu, mode selection, game, result, settings) from the
-    /// art set in Assets/_Caro/Art/UIv2 (designer delivery "Caro_xo_optimized", margins trimmed).
+    /// art set in Assets/_Caro/Art/UIv2 (designer deliveries "Caro_xo_optimized" and "Caro_XO_Assets_Round2", cleaned and trimmed).
     /// Every visible UI element is an art asset or text; nothing is drawn in code. Positions are in
     /// mockup pixels on a 1080 × 1920 canvas, measured from the top-left corner (or from the bottom for
     /// bottom-anchored blocks). Re-running it replaces the previous build.
@@ -30,12 +30,14 @@ namespace Caro.EditorTools
         // 9-slice borders in source pixels (left, bottom, right, top); first matching prefix wins.
         private static readonly (string prefix, Vector4 border)[] Borders =
         {
-            ("buttons/", new Vector4(22, 22, 22, 22)),
+            ("buttons/", new Vector4(70, 70, 70, 70)),
+            ("controls/slider_track_", new Vector4(32, 0, 32, 0)),
+            ("panels/notebook_note", new Vector4(100, 80, 60, 80)),
             ("panels/blank_notebook_panel_small", new Vector4(40, 40, 40, 40)),
             ("panels/blank_notebook_panel", new Vector4(44, 36, 36, 36)),
             ("panels/blank_paper_panel", new Vector4(30, 30, 30, 30)),
             ("panels/player_robot_score_banner_only", new Vector4(24, 24, 24, 24)),
-            ("panels/mode_card_", new Vector4(36, 36, 36, 36)),
+            ("panels/mode_card_", new Vector4(110, 110, 110, 110)),
             ("backgrounds/notebook_background_with_spiral", new Vector4(40, 18, 18, 20)),
         };
 
@@ -120,7 +122,7 @@ namespace Caro.EditorTools
             var sett = Btn(safe, "SettingsButton", "gray", 560, 1280, 780, 150, "Cài đặt", "icons/settings_gear_clean_edges", 100);
 
             // "Tỉ số gần đây": blank notebook panel + tape + title text
-            Sliced(safe, "RecentScores", "panels/blank_notebook_panel_small", 360, 1640, 560, 400, 0.5f);
+            Sliced(safe, "RecentScores", "panels/notebook_note", 360, 1640, 560, 400, 0);
             Pic(safe, "Tape", "decorations/tape/red_tape_small", 130, 1455, 130);
             Txt(safe, "RecentTitle", "Tỉ số gần đây", 360, 1500, 460, 70, 46, Ink, TextAlignmentOptions.Center);
             var rows = new[] { "Máy – Dễ", "Máy – Vừa", "Máy – Khó", "2 người" };
@@ -128,7 +130,7 @@ namespace Caro.EditorTools
             for (int i = 0; i < 4; i++)
             {
                 float y = 1575 + i * 66;
-                Txt(safe, "RecentLabel" + i, rows[i], 135, y, 300, 64, 38, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
+                Txt(safe, "RecentLabel" + i, rows[i], 165, y, 290, 64, 38, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
                 scores[i] = Txt(safe, "RecentScore" + i, "0 - 0", 590, y, 140, 64, 38, Ink, TextAlignmentOptions.MidlineRight, pivotRight: true);
             }
 
@@ -156,13 +158,13 @@ namespace Caro.EditorTools
             var safe = Safe(root);
             var back = Header(safe, "Chọn chế độ chơi");
 
-            var aiCard = SlicedButton(safe, "AiCard", "panels/mode_card_yellow_robot_blank_frame", 560, 560, 860, 360);
+            var aiCard = SlicedButton(safe, "AiCard", "panels/mode_card_yellow", 560, 560, 860, 360);
             PicLocal(aiCard.transform, "Robot", "icons/robot_clean_edges", 0, -70, 150);
             Txt(aiCard.transform, "Title", "Chơi với máy", 0, 40, 780, 90, 66, Ink, TextAlignmentOptions.Center, local: true);
             Txt(aiCard.transform, "Subtitle", "Thử thách với 3 mức độ khó", 0, 110, 780, 60, 40, Quiet, TextAlignmentOptions.Center, local: true);
             var aiCheck = PicLocal(aiCard.transform, "Check", "controls/checkbox_checked", 360, -130, 70);
 
-            var twoCard = SlicedButton(safe, "TwoPlayerCard", "panels/mode_card_blue_players_blank_frame", 560, 1000, 860, 420);
+            var twoCard = SlicedButton(safe, "TwoPlayerCard", "panels/mode_card_blue", 560, 1000, 860, 420);
             PicLocal(twoCard.transform, "TwoPlayers", "icons/two_players_clean_edges", 0, -100, 190);
             Txt(twoCard.transform, "Title", "Chơi 2 người", 0, 20, 780, 90, 66, Ink, TextAlignmentOptions.Center, local: true);
             Txt(twoCard.transform, "Subtitle", "Chơi cùng bạn trên\ncùng một thiết bị", 0, 115, 780, 120, 40, Quiet, TextAlignmentOptions.Center, local: true);
@@ -179,10 +181,10 @@ namespace Caro.EditorTools
             Set(mode, "backButton", back);
             Set(mode, "aiCard", aiCard);
             Set(mode, "twoPlayerCard", twoCard);
-            Set(mode, "aiCardOn", Spr("panels/mode_card_yellow_robot_blank_frame"));
-            Set(mode, "aiCardOff", Spr("panels/mode_card_yellow_robot_blank_frame"));
-            Set(mode, "twoPlayerCardOn", Spr("panels/mode_card_blue_players_blank_frame"));
-            Set(mode, "twoPlayerCardOff", Spr("panels/mode_card_blue_players_blank_frame"));
+            Set(mode, "aiCardOn", Spr("panels/mode_card_yellow_selected"));
+            Set(mode, "aiCardOff", Spr("panels/mode_card_yellow_normal"));
+            Set(mode, "twoPlayerCardOn", Spr("panels/mode_card_blue_selected"));
+            Set(mode, "twoPlayerCardOff", Spr("panels/mode_card_blue_normal"));
             Set(mode, "aiCheck", aiCheck.gameObject);
             Set(mode, "twoPlayerCheck", twoCheck.gameObject);
             Set(mode, "difficulty", diff);
@@ -208,7 +210,7 @@ namespace Caro.EditorTools
 
             // Bottom block: fit / undo / new game, then the score panel
             var bottom = Block(safe, "BottomBlock", false, 640);
-            var fit = Btn(bottom, "FitButton", "gray", 540, 1340, 380, 90, "Vừa màn hình", null, 0, 36, fromBottom: true);
+            var fit = Btn(bottom, "FitButton", "gray", 540, 1340, 400, 90, "Vừa màn hình", "icons/icon_fit_screen", 46, 34, fromBottom: true);
             var size = Txt(bottom, "BoardSize", "Bàn 15 × 15 · tối đa 20 × 20", 540, 1340, 900, 60, 34, Quiet, TextAlignmentOptions.Center, fromBottom: true);
             var undo = Btn(bottom, "UndoButton", "gray", 300, 1450, 420, 110, "Đi lại", null, 0, 46, fromBottom: true);
             var newGame = Btn(bottom, "NewGameButton", "yellow", 780, 1450, 420, 110, "Ván mới", "icons/replay", 50, 42, fromBottom: true);
@@ -310,7 +312,7 @@ namespace Caro.EditorTools
             // Sound card
             Pic(safe, "MusicIcon", "icons/music_note", 145, 290, 70);
             Txt(safe, "SoundTitle", "Âm thanh", 200, 290, 600, 80, 52, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
-            Sliced(safe, "SoundCard", "panels/blank_notebook_panel", 560, 530, 900, 360, 0.6f);
+            Sliced(safe, "SoundCard", "panels/notebook_note", 560, 530, 900, 360, 0);
             Pic(safe, "VolumeIcon", "icons/volume_icon_clean_edges", 200, 425, 70);
             var slider = MakeSlider(safe, 610, 425, 640);
             Txt(safe, "SoundLabel", "Bật âm thanh", 200, 535, 500, 70, 44, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
@@ -471,19 +473,24 @@ namespace Caro.EditorTools
             var img = go.GetComponent<Image>();
             img.sprite = Spr(path);
             img.type = Image.Type.Sliced;
-            img.pixelsPerUnitMultiplier = cornerScale;
+            img.pixelsPerUnitMultiplier = cornerScale > 0 ? cornerScale : FitScale(img.sprite, w, h);
             img.raycastTarget = false;
             return rt;
         }
 
+        /// <summary>Slice scale that makes the whole sprite fit inside w × h, so its corners never overlap and only the middle stretches.</summary>
+        private static float FitScale(Sprite s, float w, float h) => Mathf.Max(s.rect.width / w, s.rect.height / h);
+
+        /// <summary>A card button from <paramref name="path"/>_normal / _pressed / _disabled sprites.</summary>
         private static Button SlicedButton(Transform parent, string name, string path, float x, float y, float w, float h)
         {
-            var rt = Sliced(parent, name, path, x, y, w, h, 0.5f);
+            var rt = Sliced(parent, name, path + "_normal", x, y, w, h, 0);
             var img = rt.GetComponent<Image>();
             img.raycastTarget = true;
             var b = rt.gameObject.AddComponent<Button>();
             b.targetGraphic = img;
-            b.transition = Selectable.Transition.None;
+            b.transition = Selectable.Transition.SpriteSwap;
+            b.spriteState = new SpriteState { pressedSprite = Spr(path + "_pressed"), disabledSprite = Spr(path + "_disabled") };
             return b;
         }
 
@@ -535,7 +542,7 @@ namespace Caro.EditorTools
             var img = go.GetComponent<Image>();
             img.sprite = Spr($"buttons/button_{colour}_normal_fixed");
             img.type = Image.Type.Sliced;
-            img.pixelsPerUnitMultiplier = 0.5f;
+            img.pixelsPerUnitMultiplier = FitScale(img.sprite, w, h);
             img.raycastTarget = interactable;
             if (interactable)
             {
@@ -581,19 +588,22 @@ namespace Caro.EditorTools
 
         private static Button HeaderIn(Transform parent, string title, out TMP_Text titleText, bool withGear, out Button gear)
         {
-            var back = IconButton(parent, "BackButton", "icons/icon_back_small", 130, 150, 100);
+            var back = IconButton(parent, "BackButton", "icons/back_arrow", 130, 150, 100);
             titleText = Txt(parent, "Title", title, 210, 150, 680, 100, 58, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
-            gear = withGear ? IconButton(parent, "SettingsButton", "icons/icon_settings_small", 970, 150, 100) : null;
+            gear = withGear ? IconButton(parent, "SettingsButton", "icons/settings_gear_clean_edges", 970, 150, 100) : null;
             return back;
         }
 
-        private static Button IconButton(Transform parent, string name, string path, float x, float y, float size)
+        /// <summary>A square yellow frame button with an icon on top.</summary>
+        private static Button IconButton(Transform parent, string name, string icon, float x, float y, float size)
         {
-            var img = Pic(parent, name, path, x, y, size);
+            var img = Pic(parent, name, "buttons_square/button_frame_yellow_normal", x, y, size);
             img.raycastTarget = true;
             var b = img.gameObject.AddComponent<Button>();
             b.targetGraphic = img;
-            b.transition = Selectable.Transition.ColorTint;
+            b.transition = Selectable.Transition.SpriteSwap;
+            b.spriteState = new SpriteState { pressedSprite = Spr("buttons_square/button_frame_yellow_pressed") };
+            PicLocal(img.transform, "Icon", icon, 0, 0, size * 0.58f);
             return b;
         }
 
@@ -621,25 +631,25 @@ namespace Caro.EditorTools
             return group;
         }
 
-        /// <summary>Volume slider: track = gray button art, fill = green button art, knob = slider knob art.</summary>
+        /// <summary>Volume slider: track, coral fill and knob from the slider art.</summary>
         private static UnityEngine.UI.Slider MakeSlider(Transform parent, float x, float y, float w)
         {
             var go = new GameObject("VolumeSlider", typeof(RectTransform));
             Place(go, parent, x, y, w, 80);
-            var bg = Card(go.transform, "Track", "gray", 0, 0, w, 40, interactable: false);
+            var bg = Sliced(go.transform, "Track", "controls/slider_track_empty", 0, 0, w, 40, 0);
             bg.anchorMin = new Vector2(0, 0.5f); bg.anchorMax = new Vector2(1, 0.5f);
             bg.sizeDelta = new Vector2(0, 40); bg.anchoredPosition = Vector2.zero;
-            bg.GetComponent<Image>().pixelsPerUnitMultiplier = 1.1f;
+            bg.GetComponent<Image>().pixelsPerUnitMultiplier = 64f / 40f;
 
             var fillArea = new GameObject("Fill Area", typeof(RectTransform));
             var fa = (RectTransform)fillArea.transform;
             fa.SetParent(go.transform, false);
             fa.anchorMin = new Vector2(0, 0.5f); fa.anchorMax = new Vector2(1, 0.5f);
             fa.sizeDelta = new Vector2(-40, 40); fa.anchoredPosition = Vector2.zero;
-            var fill = Card(fillArea.transform, "Fill", "green", 0, 0, 10, 40, interactable: false);
+            var fill = Sliced(fillArea.transform, "Fill", "controls/slider_track_filled", 0, 0, 10, 40, 0);
             fill.anchorMin = new Vector2(0, 0); fill.anchorMax = new Vector2(0, 1);
             fill.sizeDelta = new Vector2(40, 0); fill.anchoredPosition = Vector2.zero;
-            fill.GetComponent<Image>().pixelsPerUnitMultiplier = 1.1f;
+            fill.GetComponent<Image>().pixelsPerUnitMultiplier = 64f / 40f;
 
             var handleArea = new GameObject("Handle Slide Area", typeof(RectTransform));
             var ha = (RectTransform)handleArea.transform;
