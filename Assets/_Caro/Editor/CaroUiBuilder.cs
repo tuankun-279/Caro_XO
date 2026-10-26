@@ -30,6 +30,8 @@ namespace Caro.EditorTools
         // 9-slice borders in source pixels (left, bottom, right, top); first matching prefix wins.
         private static readonly (string prefix, Vector4 border)[] Borders =
         {
+            ("buttons/button_blue", new Vector4(100, 100, 100, 100)), // Round3 pill shape: ends are half the height
+            ("buttons/button_gray", new Vector4(100, 100, 100, 100)),
             ("buttons/", new Vector4(70, 70, 70, 70)),
             ("controls/slider_track_", new Vector4(32, 0, 32, 0)),
             ("panels/notebook_note", new Vector4(100, 80, 60, 80)),
@@ -591,19 +593,19 @@ namespace Caro.EditorTools
         {
             var back = IconButton(parent, "BackButton", "icons/back_arrow", 130, 150, 100);
             titleText = Txt(parent, "Title", title, 210, 150, 680, 100, 58, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
-            gear = withGear ? IconButton(parent, "SettingsButton", "icons/settings_gear_clean_edges", 970, 150, 100) : null;
+            gear = withGear ? IconButton(parent, "SettingsButton", "icons/settings_gear_clean_edges", 970, 150, 100, "gray") : null;
             return back;
         }
 
-        /// <summary>A square yellow frame button with an icon on top.</summary>
-        private static Button IconButton(Transform parent, string name, string icon, float x, float y, float size)
+        /// <summary>A square frame button (yellow or gray) with an icon on top.</summary>
+        private static Button IconButton(Transform parent, string name, string icon, float x, float y, float size, string frame = "yellow")
         {
-            var img = Pic(parent, name, "buttons_square/button_frame_yellow_normal", x, y, size);
+            var img = Pic(parent, name, $"buttons_square/button_frame_{frame}_normal", x, y, size);
             img.raycastTarget = true;
             var b = img.gameObject.AddComponent<Button>();
             b.targetGraphic = img;
             b.transition = Selectable.Transition.SpriteSwap;
-            b.spriteState = new SpriteState { pressedSprite = Spr("buttons_square/button_frame_yellow_pressed") };
+            b.spriteState = new SpriteState { pressedSprite = Spr($"buttons_square/button_frame_{frame}_pressed") };
             PicLocal(img.transform, "Icon", icon, 0, 0, size * 0.58f);
             return b;
         }
