@@ -9,7 +9,7 @@ namespace Caro.EditorTools
 {
     /// <summary>
     /// Builds the five screens of the redesign (menu, mode selection, game, result, settings) from the
-    /// art set in Assets/_Caro/Art/UIv2 (designer deliveries "Caro_xo_optimized", "Caro_XO_Assets_Round2" and "Round3", cleaned and trimmed).
+    /// art set in Assets/_Caro/Art/UIv2 (designer deliveries "Caro_xo_optimized", "Caro_XO_Assets_Round2" to "Round4", cleaned and trimmed).
     /// Every visible UI element is an art asset or text; nothing is drawn in code. Positions are in
     /// mockup pixels on a 1080 × 1920 canvas, measured from the top-left corner (or from the bottom for
     /// bottom-anchored blocks). Re-running it replaces the previous build.
@@ -30,8 +30,6 @@ namespace Caro.EditorTools
         // 9-slice borders in source pixels (left, bottom, right, top); first matching prefix wins.
         private static readonly (string prefix, Vector4 border)[] Borders =
         {
-            ("buttons/button_blue", new Vector4(100, 100, 100, 100)), // Round3 pill shape: ends are half the height
-            ("buttons/button_gray", new Vector4(100, 100, 100, 100)),
             ("buttons/", new Vector4(70, 70, 70, 70)),
             ("controls/slider_track_", new Vector4(32, 0, 32, 0)),
             ("panels/notebook_note", new Vector4(100, 80, 60, 80)),
