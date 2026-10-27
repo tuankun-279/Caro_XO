@@ -119,21 +119,26 @@ namespace Caro.EditorTools
             var twoP = Btn(safe, "TwoPlayerButton", "blue", 560, 1100, 780, 150, "Chơi 2 người", "icons/two_players_clean_edges", 115);
             var sett = Btn(safe, "SettingsButton", "gray", 560, 1280, 780, 150, "Cài đặt", "icons/settings_gear_clean_edges", 100);
 
-            // "Tỉ số gần đây": blank notebook panel + tape + title text
-            Sliced(safe, "RecentScores", "panels/notebook_note", 360, 1640, 560, 400, 0);
-            Pic(safe, "Tape", "decorations/tape/red_tape_small", 130, 1455, 130);
-            Txt(safe, "RecentTitle", "Tỉ số gần đây", 360, 1500, 460, 70, 46, Ink, TextAlignmentOptions.Center);
+            // "Tỉ số gần đây": one centred block (notebook panel, tape, title and rows) that moves as a unit.
+            // Child positions are relative to the block centre (y down).
+            var recent = Place(new GameObject("RecentScores", typeof(RectTransform)), safe, 560, 1640, 620, 400);
+            var recentPanel = Sliced(recent, "Panel", "panels/notebook_note", 0, 0, 620, 400, 0);
+            recentPanel.anchorMin = Vector2.zero;
+            recentPanel.anchorMax = Vector2.one;
+            recentPanel.offsetMin = recentPanel.offsetMax = Vector2.zero;
+            PicLocal(recent, "Tape", "decorations/tape/red_tape_small", -285, -185, 120);
+            Txt(recent, "RecentTitle", "Tỉ số gần đây", 25, -140, 460, 70, 46, Ink, TextAlignmentOptions.Center, local: true);
             var rows = new[] { "Máy – Dễ", "Máy – Vừa", "Máy – Khó", "2 người" };
             var scores = new TMP_Text[4];
             for (int i = 0; i < 4; i++)
             {
-                float y = 1575 + i * 66;
-                Txt(safe, "RecentLabel" + i, rows[i], 165, y, 290, 64, 38, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
-                scores[i] = Txt(safe, "RecentScore" + i, "0 - 0", 590, y, 140, 64, 38, Ink, TextAlignmentOptions.MidlineRight, pivotRight: true);
+                float y = -65 + i * 66;
+                Txt(recent, "RecentLabel" + i, rows[i], -200, y, 300, 64, 38, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true, local: true);
+                scores[i] = Txt(recent, "RecentScore" + i, "0 - 0", 255, y, 160, 64, 38, Ink, TextAlignmentOptions.MidlineRight, pivotRight: true, local: true);
             }
 
-            Pic(safe, "YellowStar", "doodles/yellow_star", 830, 1560, 70, 10);
-            Pic(safe, "Pencil", "doodles/pencil_large", 820, 1730, 110, 0);
+            Pic(safe, "YellowStar", "doodles/yellow_star", 955, 1500, 70, 10);
+            Pic(safe, "Pencil", "doodles/pencil_large", 965, 1760, 110, 0);
 
             var menu = root.gameObject.AddComponent<MenuScreen>();
             Set(menu, "gameScreen", game);
@@ -383,9 +388,12 @@ namespace Caro.EditorTools
             rt.offsetMin = new Vector2(18, 18);
             rt.offsetMax = new Vector2(-18, -18);
 
+            // The page starts PageLeft units in from the left so the spiral loops have room to wrap around its edge
+            const float pageLeft = 32f;
+
             // Grid paper: one tile holds 7 × 7 cells and is shown 504 units wide (72 units per cell)
             var paper = Stretch(rt, "Paper");
-            paper.offsetMin = new Vector2(20, 20);
+            paper.offsetMin = new Vector2(pageLeft + 20, 20);
             paper.offsetMax = new Vector2(-20, -20);
             var paperImg = paper.gameObject.AddComponent<Image>();
             paperImg.sprite = Spr("backgrounds/bg_paper_tile");
@@ -395,31 +403,36 @@ namespace Caro.EditorTools
 
             // Page edge: transparent inside, its 80 px band shown about 27 units wide
             var edge = Stretch(rt, "PageEdge");
+            edge.offsetMin = new Vector2(pageLeft, 0);
             var edgeImg = edge.gameObject.AddComponent<Image>();
             edgeImg.sprite = Spr("backgrounds/bg_page_frame");
             edgeImg.type = Image.Type.Sliced;
             edgeImg.pixelsPerUnitMultiplier = 3f;
             edgeImg.raycastTarget = false;
 
-            // Spiral binding, repeated from top to bottom over the left edge. Only built once the
-            // tileable coil art (backgrounds/notebook_spiral_coil.png) is in the project.
+            // Spiral binding: one tile is one wire loop and its punched hole. The page edge sits at 47% of the
+            // tile width, so the loop wraps around it and the hole lands in the page margin. The column is kept
+            // a whole number of loops tall and clear of the rounded page corners.
             var coil = AssetDatabase.LoadAssetAtPath<Sprite>(Art + "backgrounds/notebook_spiral_coil.png");
             if (coil != null)
             {
-                const float spiralWidth = 90f; // the paper strip with the holes is the right 18% of the tile
+                const float spiralWidth = 90f;
+                const float edgeInTile = 240f / 508f;
                 var spiral = new GameObject("Spiral", typeof(RectTransform), typeof(Image));
                 var srt = (RectTransform)spiral.transform;
                 srt.SetParent(rt, false);
-                srt.anchorMin = new Vector2(0, 0);
-                srt.anchorMax = new Vector2(0, 1);
+                srt.anchorMin = new Vector2(0, 0.5f);
+                srt.anchorMax = new Vector2(0, 0.5f);
                 srt.pivot = new Vector2(0.5f, 0.5f);
-                srt.sizeDelta = new Vector2(spiralWidth, -60);
-                srt.anchoredPosition = new Vector2(35, 0);
+                srt.sizeDelta = new Vector2(spiralWidth, 400);
+                srt.anchoredPosition = new Vector2(pageLeft - edgeInTile * spiralWidth + spiralWidth / 2, 0);
                 var spiralImg = spiral.GetComponent<Image>();
                 spiralImg.sprite = coil;
                 spiralImg.type = Image.Type.Tiled;
                 spiralImg.pixelsPerUnitMultiplier = coil.rect.width / spiralWidth;
                 spiralImg.raycastTarget = false;
+                float tile = coil.rect.height * spiralWidth / coil.rect.width;
+                spiral.AddComponent<WholeTileColumn>().Configure(tile, 48f);
             }
 
             // Doodles, placed as fractions of the page so they keep their spots on any aspect ratio
