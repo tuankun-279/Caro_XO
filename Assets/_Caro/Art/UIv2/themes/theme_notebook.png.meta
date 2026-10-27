@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 54980880e35a15d459555b494c6b5d9d
+guid: d57576f74ad81884fa8216094f26feda
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -5509960705719966132
-    second: red_tape_large_0
+      213: 5223813672614810433
+    second: theme_notebook_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: red_tape_large_0
+      name: theme_notebook_0
       rect:
         serializedVersion: 2
-        x: 4
-        y: 4
-        width: 293
-        height: 257
+        x: 0
+        y: 0
+        width: 287
+        height: 400
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c4663316eefa883b0800000000000000
-      internalID: -5509960705719966132
+      spriteID: 143d809bbd6be7840800000000000000
+      internalID: 5223813672614810433
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      red_tape_large_0: -5509960705719966132
+      theme_notebook_0: 5223813672614810433
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

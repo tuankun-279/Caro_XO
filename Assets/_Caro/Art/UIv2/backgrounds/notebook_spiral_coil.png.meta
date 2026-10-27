@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: cebe7d444c4db76479d67e25f09342b2
+guid: c9ecb54002934ea4f83ad41ba09a3a0d
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 1919289069456151664
-    second: yellow_spark_right_only_0
+      213: -8209791043050323512
+    second: notebook_spiral_coil_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: yellow_spark_right_only_0
+      name: notebook_spiral_coil_0
       rect:
         serializedVersion: 2
-        x: 5
-        y: 5
-        width: 69
-        height: 71
+        x: 0
+        y: 0
+        width: 508
+        height: 772
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 07459366d3fa2aa10800000000000000
-      internalID: 1919289069456151664
+      spriteID: 8c14dce2b86f01e80800000000000000
+      internalID: -8209791043050323512
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      yellow_spark_right_only_0: 1919289069456151664
+      notebook_spiral_coil_0: -8209791043050323512
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

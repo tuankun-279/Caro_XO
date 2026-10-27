@@ -34,10 +34,7 @@ namespace Caro.EditorTools
             ("controls/slider_track_", new Vector4(32, 0, 32, 0)),
             ("panels/notebook_note", new Vector4(100, 80, 60, 80)),
             ("panels/score_panel", new Vector4(80, 50, 50, 50)),
-            ("panels/blank_notebook_panel_small", new Vector4(40, 40, 40, 40)),
-            ("panels/blank_notebook_panel", new Vector4(44, 36, 36, 36)),
-            ("panels/blank_paper_panel", new Vector4(30, 30, 30, 30)),
-            ("panels/player_robot_score_banner_only", new Vector4(24, 24, 24, 24)),
+            ("panels/blank_paper_panel", new Vector4(80, 80, 80, 80)),
             ("panels/mode_card_", new Vector4(110, 110, 110, 110)),
             ("backgrounds/bg_page_frame", new Vector4(120, 120, 120, 120)),
         };
@@ -206,7 +203,7 @@ namespace Caro.EditorTools
             var top = Block(safe, "TopBlock", true, 400);
             var back = HeaderIn(top, "Chơi với máy - Dễ", out var title, withGear: true, out var gear);
             Pic(top, "Pencil", "icons/pencil_clean_edges", 130, 300, 80);
-            var pill = Sliced(top, "TurnPill", "panels/blank_paper_panel", 500, 300, 600, 110, 1f);
+            var pill = Sliced(top, "TurnPill", "panels/blank_paper_panel", 500, 300, 600, 110, 0);
             var status = Txt(pill, "Status", "Lượt của bạn (X)", 0, 0, 560, 90, 44, Ink, TextAlignmentOptions.Center, local: true);
 
             // Bottom block: fit / undo / new game, then the score panel
@@ -256,7 +253,7 @@ namespace Caro.EditorTools
             Background(root);
             var safe = Safe(root);
 
-            Pic(safe, "Confetti", "results/confetti_burst_color", 560, 330, 900);
+            Pic(safe, "Confetti", "results/confetti_burst_color", 560, 215, 1000); // bursts sit above the title
             Pic(safe, "RedStar", "decorations/stars/red_star", 890, 760, 90, 10);
             Pic(safe, "BlueStar", "decorations/stars/blue_star", 230, 820, 80, -8);
             Pic(safe, "Tape", "decorations/tape/red_tape_tall", 150, 1040, 80);
@@ -289,8 +286,8 @@ namespace Caro.EditorTools
             Set(rs, "subtitleText", subtitle);
             Set(rs, "art", art);
             Set(rs, "winArt", Spr("results/trophy_celebration"));
-            Set(rs, "loseArt", Spr("icons/robot"));
-            Set(rs, "drawArt", Spr("icons/two_players_clean_edges"));
+            Set(rs, "loseArt", Spr("results/result_lose"));
+            Set(rs, "drawArt", Spr("results/result_draw"));
             Set(rs, "leftName", leftName);
             Set(rs, "rightName", rightName);
             Set(rs, "leftScore", leftScore);
@@ -334,7 +331,7 @@ namespace Caro.EditorTools
             // Theme: preview thumbnails above the option buttons
             Pic(safe, "PaletteIcon", "icons/palette", 145, 1290, 70);
             Txt(safe, "ThemeTitle", "Giao diện", 200, 1290, 600, 80, 48, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
-            var thumbs = new[] { "themes/theme_default_selected", "themes/theme_grid", "themes/theme_minimal_dark" };
+            var thumbs = new[] { "themes/theme_notebook", "themes/theme_grid", "themes/theme_minimal_dark" };
             for (int i = 0; i < 3; i++)
                 Pic(safe, "ThemePreview" + i, thumbs[i], 560 + (i - 1) * 300, 1450, 200);
             var theme = Options(safe, "Theme", new[] { "Mặc định", "Giấy ô li", "Tối giản" }, 1620, 270, 100, 38);
@@ -409,7 +406,7 @@ namespace Caro.EditorTools
             var coil = AssetDatabase.LoadAssetAtPath<Sprite>(Art + "backgrounds/notebook_spiral_coil.png");
             if (coil != null)
             {
-                const float spiralWidth = 80f;
+                const float spiralWidth = 90f; // the paper strip with the holes is the right 18% of the tile
                 var spiral = new GameObject("Spiral", typeof(RectTransform), typeof(Image));
                 var srt = (RectTransform)spiral.transform;
                 srt.SetParent(rt, false);
@@ -417,7 +414,7 @@ namespace Caro.EditorTools
                 srt.anchorMax = new Vector2(0, 1);
                 srt.pivot = new Vector2(0.5f, 0.5f);
                 srt.sizeDelta = new Vector2(spiralWidth, -60);
-                srt.anchoredPosition = new Vector2(22, 0);
+                srt.anchoredPosition = new Vector2(35, 0);
                 var spiralImg = spiral.GetComponent<Image>();
                 spiralImg.sprite = coil;
                 spiralImg.type = Image.Type.Tiled;
