@@ -189,8 +189,7 @@ namespace Caro.Game
         private void OpenSettings()
         {
             _settingsOpen = true;
-            SetCovered(true);
-            UpdateInput();
+            UpdateInput(); // the settings popup opens over the game, which stays visible (blurred) behind it
             // Playing the AI: changing "who moves first" starts a new game right away
             settingsScreen.Open(_mode == MatchMode.VsAI, () =>
             {

@@ -32,11 +32,8 @@ namespace Caro.Game
         {
             vsAiButton.onClick.AddListener(() => OpenModeSelect(MatchMode.VsAI));
             twoPlayerButton.onClick.AddListener(() => OpenModeSelect(MatchMode.TwoPlayer));
-            settingsButton.onClick.AddListener(() =>
-            {
-                gameObject.SetActive(false);
-                settings.Open(false, ShowMenu);
-            });
+            // The settings popup opens over the menu, which stays visible (blurred) behind it
+            settingsButton.onClick.AddListener(() => settings.Open(false, Refresh));
 
             modeSelect.BackRequested += ShowMenu;
             modeSelect.StartRequested += (mode, d) =>

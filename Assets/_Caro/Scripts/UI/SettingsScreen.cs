@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Caro.AI;
 using Caro.Core;
 using TMPro;
@@ -8,13 +9,28 @@ using UnityEngine.UI;
 namespace Caro.Game
 {
     /// <summary>
-    /// Full-screen settings page (mockup 5): volume, sound and vibration, who moves first against the AI,
-    /// default AI difficulty and the visual theme. Opened from the menu or the game screen; the caller
-    /// passes what to do when it closes.
+    /// Settings popup: volume, sound and vibration, who moves first against the AI, default AI difficulty and
+    /// the visual theme. It opens over the current screen, which is shown blurred behind it; the × button or a
+    /// tap on the blurred area closes it. Opened from the menu or the game screen; the caller passes what to
+    /// do when it closes.
     /// </summary>
     public class SettingsScreen : MonoBehaviour
     {
+        [Tooltip("× button at the top right of the popup")]
         [SerializeField] private Button backButton;
+
+        [Header("Popup")]
+        [Tooltip("Full-screen blurred snapshot of the screen behind; tapping it closes the popup")]
+        [SerializeField] private RawImage blurBackdrop;
+        [SerializeField] private Button backdropButton;
+        [Tooltip("The paper card holding the settings; it scales in when the popup opens")]
+        [SerializeField] private RectTransform popup;
+        [SerializeField] private CanvasGroup group;
+        [SerializeField] private float openSeconds = 0.18f;
+        [Tooltip("Final size of the card, so some of the blurred screen shows around it")]
+        [SerializeField] private float popupScale = 0.92f;
+        [Tooltip("How many times the snapshot is halved before being shown (more = blurrier)")]
+        [SerializeField] private int blurHalvings = 4;
 
         [Header("Sound")]
         [SerializeField] private Slider volumeSlider;
@@ -38,10 +54,13 @@ namespace Caro.Game
         private Action _onClosed;
         private Action<bool> _onFirstPlayer;
         private bool _inAiGame;
+        private RenderTexture _blur;
+        private Coroutine _opening;
 
         private void Awake()
         {
             backButton.onClick.AddListener(Close);
+            if (backdropButton != null) backdropButton.onClick.AddListener(Close);
             volumeSlider.onValueChanged.AddListener(v => Feedback.Volume = v);
             soundToggle.onClick.AddListener(() => { Feedback.SoundOn = !Feedback.SoundOn; Refresh(); });
             vibrationToggle.onClick.AddListener(() => { Feedback.VibrationOn = !Feedback.VibrationOn; Refresh(); });
@@ -57,9 +76,14 @@ namespace Caro.Game
             };
         }
 
+        private void OnDestroy()
+        {
+            if (_blur != null) _blur.Release();
+        }
+
         /// <summary>
-        /// Opens the page. inAiGame: opened during a game against the AI, so changing who moves first
-        /// closes the page and starts a new game (onFirstPlayer).
+        /// Opens the popup. inAiGame: opened during a game against the AI, so changing who moves first
+        /// closes it and starts a new game (onFirstPlayer).
         /// </summary>
         public void Open(bool inAiGame, Action onClosed, Action<bool> onFirstPlayer = null)
         {
@@ -78,11 +102,42 @@ namespace Caro.Game
             if (firstPlayerNote != null)
                 firstPlayerNote.text = inAiGame ? "Đổi sẽ bắt đầu ván mới · tỉ số giữ nguyên" : "Áp dụng cho ván đấu máy tiếp theo";
             Refresh();
+
+            if (_opening != null) StopCoroutine(_opening);
+            _opening = StartCoroutine(OpenRoutine());
+        }
+
+        /// <summary>Hidden for one frame while the screen behind is captured, then blurred in and scaled up.</summary>
+        private IEnumerator OpenRoutine()
+        {
+            if (group != null) { group.alpha = 0f; group.blocksRaycasts = true; }
+            if (blurBackdrop != null) blurBackdrop.enabled = false;
+            yield return new WaitForEndOfFrame();
+
+            if (blurBackdrop != null)
+            {
+                _blur = ScreenBlur.Capture(_blur, blurHalvings, out bool flipped);
+                blurBackdrop.texture = _blur;
+                blurBackdrop.uvRect = flipped ? new Rect(0, 1, 1, -1) : new Rect(0, 0, 1, 1);
+                blurBackdrop.enabled = true;
+            }
+
+            for (float t = 0f; t < openSeconds; t += Time.unscaledDeltaTime)
+            {
+                float k = Mathf.SmoothStep(0f, 1f, t / openSeconds);
+                if (group != null) group.alpha = k;
+                if (popup != null) popup.localScale = Vector3.one * (popupScale * Mathf.Lerp(0.92f, 1f, k));
+                yield return null;
+            }
+            if (group != null) group.alpha = 1f;
+            if (popup != null) popup.localScale = Vector3.one * popupScale;
+            _opening = null;
         }
 
         public void Close()
         {
             if (!gameObject.activeSelf) return;
+            if (_opening != null) { StopCoroutine(_opening); _opening = null; }
             gameObject.SetActive(false);
             var callback = _onClosed;
             _onClosed = null;

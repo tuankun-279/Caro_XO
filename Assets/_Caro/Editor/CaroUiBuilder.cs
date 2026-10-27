@@ -365,45 +365,74 @@ namespace Caro.EditorTools
             return rs;
         }
 
+        /// <summary>
+        /// Settings popup over the current screen: a blurred snapshot of the screen fills the background (tap
+        /// it to close), and a paper card holds the settings with a × button. The settings keep the full-screen
+        /// mockup coordinates inside "Content", a 1080 × 1920 frame whose top sits 90 units above the card, so
+        /// moving or resizing the card does not change the layout inside it.
+        /// </summary>
         private static SettingsScreen BuildSettings(Transform canvas)
         {
             var root = MakeScreen(canvas, "SettingsScreen");
-            Background(root);
+            var group = root.gameObject.AddComponent<CanvasGroup>();
+
+            // Blurred backdrop (the texture is captured when the popup opens)
+            var backdrop = Stretch(root, "BlurBackdrop");
+            var blur = backdrop.gameObject.AddComponent<RawImage>();
+            blur.color = new Color(0.8f, 0.8f, 0.8f, 1f); // slightly darker so the card stands out
+            blur.raycastTarget = true;
+            var backdropButton = backdrop.gameObject.AddComponent<Button>();
+            backdropButton.targetGraphic = blur;
+            backdropButton.transition = Selectable.Transition.None;
+
             var safe = Safe(root);
-            var back = Header(safe, "Cài đặt");
+            const float cardTop = 110, cardHeight = 1680;
+            var popup = Place(new GameObject("Popup", typeof(RectTransform)), safe, 560, cardTop + cardHeight / 2, 960, cardHeight);
+            PaperCard(popup);
+
+            var content = Place(new GameObject("Content", typeof(RectTransform)), popup, 520, 0, W, H);
+            content.pivot = new Vector2(0.5f, 1f);
+            content.anchoredPosition = new Vector2(-20, 90);
+
+            Txt(content, "TitleText", "Cài đặt", 560, 150, 600, 100, 58, Ink, TextAlignmentOptions.Center);
+            var close = CloseButton(content, 965, 150, 96);
 
             // Sound card
-            Pic(safe, "MusicIcon", "icons/music_note", 145, 290, 70);
-            Txt(safe, "SoundTitle", "Âm thanh", 200, 290, 600, 80, 52, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
-            Sliced(safe, "SoundCard", "panels/notebook_note", 560, 530, 900, 360, 0);
-            Pic(safe, "VolumeIcon", "icons/volume_icon_clean_edges", 200, 425, 70);
-            var slider = MakeSlider(safe, 610, 425, 640);
-            Txt(safe, "SoundLabel", "Bật âm thanh", 200, 535, 500, 70, 44, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
-            var sound = Toggle(safe, "SoundToggle", 860, 535);
-            Txt(safe, "VibrationLabel", "Rung", 200, 640, 500, 70, 44, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
-            var vib = Toggle(safe, "VibrationToggle", 860, 640);
+            Pic(content, "MusicIcon", "icons/music_note", 145, 290, 70);
+            Txt(content, "SoundTitle", "Âm thanh", 200, 290, 600, 80, 52, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
+            Sliced(content, "SoundCard", "panels/notebook_note", 560, 530, 900, 360, 0);
+            Pic(content, "VolumeIcon", "icons/volume_icon_clean_edges", 200, 425, 70);
+            var slider = MakeSlider(content, 610, 425, 640);
+            Txt(content, "SoundLabel", "Bật âm thanh", 200, 535, 500, 70, 44, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
+            var sound = Toggle(content, "SoundToggle", 860, 535);
+            Txt(content, "VibrationLabel", "Rung", 200, 640, 500, 70, 44, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
+            var vib = Toggle(content, "VibrationToggle", 860, 640);
 
             // Who moves first against the AI
-            Txt(safe, "FirstTitle", "Ai đi trước <size=80%>(chơi với máy)</size>", 120, 790, 880, 70, 48, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
-            var first = Options(safe, "FirstPlayer", new[] { "Bạn", "Máy" }, 885, 400, 110);
-            var firstNote = Txt(safe, "FirstNote", "", 560, 965, 900, 50, 32, Quiet, TextAlignmentOptions.Center);
+            Txt(content, "FirstTitle", "Ai đi trước <size=80%>(chơi với máy)</size>", 120, 790, 880, 70, 48, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
+            var first = Options(content, "FirstPlayer", new[] { "Bạn", "Máy" }, 885, 400, 110);
+            var firstNote = Txt(content, "FirstNote", "", 560, 965, 900, 50, 32, Quiet, TextAlignmentOptions.Center);
 
             // Difficulty
-            Pic(safe, "ChartIcon", "icons/bar_chart", 145, 1060, 70);
-            Txt(safe, "DifficultyTitle", "Độ khó <size=80%>(chơi với máy)</size>", 200, 1060, 820, 80, 48, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
-            var diff = Options(safe, "Difficulty", new[] { "Dễ", "Vừa", "Khó" }, 1160, 270, 110);
+            Pic(content, "ChartIcon", "icons/bar_chart", 145, 1060, 70);
+            Txt(content, "DifficultyTitle", "Độ khó <size=80%>(chơi với máy)</size>", 200, 1060, 820, 80, 48, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
+            var diff = Options(content, "Difficulty", new[] { "Dễ", "Vừa", "Khó" }, 1160, 270, 110);
 
             // Theme: preview thumbnails above the option buttons
-            Pic(safe, "PaletteIcon", "icons/palette", 145, 1290, 70);
-            Txt(safe, "ThemeTitle", "Giao diện", 200, 1290, 600, 80, 48, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
+            Pic(content, "PaletteIcon", "icons/palette", 145, 1290, 70);
+            Txt(content, "ThemeTitle", "Giao diện", 200, 1290, 600, 80, 48, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
             var thumbs = new[] { "themes/theme_notebook", "themes/theme_grid", "themes/theme_minimal_dark" };
             for (int i = 0; i < 3; i++)
-                Pic(safe, "ThemePreview" + i, thumbs[i], 560 + (i - 1) * 300, 1450, 200);
-            var theme = Options(safe, "Theme", new[] { "Mặc định", "Giấy ô li", "Tối giản" }, 1620, 270, 100, 38);
-            Txt(safe, "ThemeNote", "Giấy ô li và Tối giản: chờ asset giao diện từ designer", 560, 1715, 900, 50, 30, Quiet, TextAlignmentOptions.Center);
+                Pic(content, "ThemePreview" + i, thumbs[i], 560 + (i - 1) * 300, 1450, 200);
+            var theme = Options(content, "Theme", new[] { "Mặc định", "Giấy ô li", "Tối giản" }, 1620, 270, 100, 38);
+            Txt(content, "ThemeNote", "Giấy ô li và Tối giản: chờ asset giao diện từ designer", 560, 1715, 900, 50, 30, Quiet, TextAlignmentOptions.Center);
 
             var ss = root.gameObject.AddComponent<SettingsScreen>();
-            Set(ss, "backButton", back);
+            Set(ss, "backButton", close);
+            Set(ss, "blurBackdrop", blur);
+            Set(ss, "backdropButton", backdropButton);
+            Set(ss, "popup", popup);
+            Set(ss, "group", group);
             Set(ss, "volumeSlider", slider);
             Set(ss, "soundToggle", sound);
             Set(ss, "vibrationToggle", vib);
@@ -414,6 +443,40 @@ namespace Caro.EditorTools
             Set(ss, "difficulty", diff);
             Set(ss, "theme", theme);
             return ss;
+        }
+
+        /// <summary>A card of grid paper with the hand-drawn page edge (used for popups); it blocks clicks.</summary>
+        private static void PaperCard(RectTransform card)
+        {
+            var paper = Stretch(card, "Paper");
+            paper.offsetMin = new Vector2(20, 20);
+            paper.offsetMax = new Vector2(-20, -20);
+            var paperImg = paper.gameObject.AddComponent<Image>();
+            paperImg.sprite = Spr("backgrounds/bg_paper_tile");
+            paperImg.type = Image.Type.Tiled;
+            paperImg.pixelsPerUnitMultiplier = paperImg.sprite.rect.width / 504f;
+            paperImg.raycastTarget = true;
+
+            var edge = Stretch(card, "PageEdge");
+            var edgeImg = edge.gameObject.AddComponent<Image>();
+            edgeImg.sprite = Spr("backgrounds/bg_page_frame");
+            edgeImg.type = Image.Type.Sliced;
+            edgeImg.pixelsPerUnitMultiplier = 3f;
+            edgeImg.raycastTarget = false;
+        }
+
+        /// <summary>Square gray frame button with a × mark that closes a popup.</summary>
+        private static Button CloseButton(Transform parent, float x, float y, float size)
+        {
+            var img = Pic(parent, "CloseButton", "buttons_square/button_frame_gray_normal", x, y, size);
+            img.raycastTarget = true;
+            var b = img.gameObject.AddComponent<Button>();
+            b.targetGraphic = img;
+            b.transition = Selectable.Transition.SpriteSwap;
+            b.spriteState = new SpriteState { pressedSprite = Spr("buttons_square/button_frame_gray_pressed") };
+            var mark = Txt(img.transform, "Mark", "×", 0, -4, size, size, size * 0.8f, Ink, TextAlignmentOptions.Center, local: true);
+            mark.fontStyle = FontStyles.Bold;
+            return b;
         }
 
         // ================= Building blocks =================
