@@ -254,9 +254,18 @@ namespace Caro.EditorTools
             // Top block: header + whose turn. Its mint fill hides the board when it is zoomed under the bar.
             var top = Block(safe, "TopBlock", true, 400);
             var back = HeaderIn(top, "Chơi với máy - Dễ", out var title, withGear: true, out var gear);
-            Pic(top, "Pencil", "icons/pencil_clean_edges", 130, 300, 80);
-            var pill = Sliced(top, "TurnPill", "panels/blank_paper_panel", 500, 300, 600, 110, 0);
-            var status = Txt(pill, "Status", "Lượt của bạn (X)", 0, 0, 560, 90, 44, Ink, TextAlignmentOptions.Center, local: true);
+            // Turn bar: robot (or player X) on the left, the player (or player O) on the right, label centred between.
+            // TurnAvatars lights up the side whose turn it is and fades the other.
+            var turnBar = Place(new GameObject("TurnBar", typeof(RectTransform)), top, 550, 300, 900, 130);
+            var pill = Sliced(turnBar, "TurnPill", "panels/blank_paper_panel", 0, 0, 560, 110, 0);
+            pill.anchorMin = pill.anchorMax = new Vector2(0.5f, 0.5f);
+            pill.anchoredPosition = Vector2.zero;
+            var status = Txt(pill, "StatusText", "Lượt của bạn (X)", 0, 0, 520, 90, 44, Ink, TextAlignmentOptions.Center, local: true);
+            var leftAvatar = PicLocal(turnBar, "LeftAvatar", "icons/robot_clean_edges", -370, 0, 110);
+            var rightAvatar = PicLocal(turnBar, "RightAvatar", "icons/person_blue", 370, 0, 110);
+            var avatars = turnBar.gameObject.AddComponent<TurnAvatars>();
+            Set(avatars, "left", leftAvatar);
+            Set(avatars, "right", rightAvatar);
 
             // Bottom block: fit / undo / new game, then the score panel
             var bottom = Block(safe, "BottomBlock", false, 640);
@@ -264,14 +273,14 @@ namespace Caro.EditorTools
             var size = Txt(bottom, "BoardSize", "Bàn 15 × 15 · tối đa 20 × 20", 540, 1340, 900, 60, 34, Quiet, TextAlignmentOptions.Center, fromBottom: true);
             var undo = Btn(bottom, "UndoButton", "gray", 300, 1450, 420, 110, "Đi lại", null, 0, 46, fromBottom: true);
             var newGame = Btn(bottom, "NewGameButton", "yellow", 780, 1450, 420, 110, "Ván mới", "icons/replay", 50, 42, fromBottom: true);
-            Txt(bottom, "ScoreTitle", "Tỉ số", 110, 1555, 300, 70, 46, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true, fromBottom: true);
+            // Score: title centred above the panel, an icon (player / robot) over each score instead of names
+            Txt(bottom, "ScoreTitle", "Tỉ số", 540, 1555, 400, 70, 46, Ink, TextAlignmentOptions.Center, fromBottom: true);
             Sliced(bottom, "ScorePanel", "panels/score_panel", 540, 1740, 780, 280, 0, fromBottom: true);
-            var leftName = Txt(bottom, "LeftName", "Bạn (X)", 330, 1690, 340, 60, 40, Ink, TextAlignmentOptions.Center, fromBottom: true);
-            var leftScore = Txt(bottom, "LeftScore", "0", 330, 1780, 200, 90, 70, Red, TextAlignmentOptions.Center, fromBottom: true);
-            Txt(bottom, "Dash", "–", 540, 1760, 80, 80, 64, Ink, TextAlignmentOptions.Center, fromBottom: true);
-            var aiIcon = Pic(bottom, "Robot", "icons/robot_clean_edges", 880, 1690, 80, fromBottom: true);
-            var rightName = Txt(bottom, "RightName", "Máy (O)", 740, 1690, 300, 60, 40, Ink, TextAlignmentOptions.Center, fromBottom: true);
-            var rightScore = Txt(bottom, "RightScore", "0", 740, 1780, 200, 90, 70, Blue, TextAlignmentOptions.Center, fromBottom: true);
+            var leftIcon = Pic(bottom, "LeftIcon", "icons/person_blue", 340, 1683, 90, fromBottom: true);
+            var leftScore = Txt(bottom, "LeftScore", "0", 340, 1785, 200, 90, 70, Red, TextAlignmentOptions.Center, fromBottom: true);
+            Txt(bottom, "Dash", "–", 560, 1770, 80, 80, 64, Ink, TextAlignmentOptions.Center, fromBottom: true);
+            var rightIcon = Pic(bottom, "RightIcon", "icons/robot_clean_edges", 780, 1683, 90, fromBottom: true);
+            var rightScore = Txt(bottom, "RightScore", "0", 780, 1785, 200, 90, 70, Blue, TextAlignmentOptions.Center, fromBottom: true);
             Pic(bottom, "BlueStar", "doodles/blue_star_white_fill_transparent", 960, 1560, 70, fromBottom: true);
 
             var result = BuildResult(root);
@@ -283,11 +292,15 @@ namespace Caro.EditorTools
             Set(gs, "menuButton", back);
             Set(gs, "settingsButton", gear);
             Set(gs, "settingsScreen", settings);
-            Set(gs, "leftName", leftName);
-            Set(gs, "rightName", rightName);
+            Set(gs, "leftIcon", leftIcon);
+            Set(gs, "rightIcon", rightIcon);
+            Set(gs, "turnAvatars", avatars);
+            Set(gs, "robotSprite", Spr("icons/robot_clean_edges"));
+            Set(gs, "personXSprite", Spr("icons/person_coral"));
+            Set(gs, "personOSprite", Spr("icons/person_blue"));
             Set(gs, "leftScore", leftScore);
             Set(gs, "rightScore", rightScore);
-            Set(gs, "aiIcon", aiIcon.gameObject);
+            // the old robot icon (aiIcon) is replaced by LeftIcon / RightIcon
             Set(gs, "statusText", status);
             Set(gs, "boardSizeText", size);
             Set(gs, "undoButton", undo);
@@ -509,7 +522,7 @@ namespace Caro.EditorTools
             img.color = new Color(1, 1, 1, alpha);
         }
 
-        /// <summary>A full-width block glued to the top or bottom edge; its mint fill masks the zoomed board.</summary>
+        /// <summary>A full-width block glued to the top or bottom edge; its grid-paper fill masks the zoomed board.</summary>
         private static RectTransform Block(RectTransform parent, string name, bool topEdge, float height)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(Image));
@@ -521,7 +534,9 @@ namespace Caro.EditorTools
             rt.sizeDelta = new Vector2(0, height);
             rt.anchoredPosition = Vector2.zero;
             var img = go.GetComponent<Image>();
-            img.color = Mint;
+            img.sprite = Spr("backgrounds/bg_paper_tile");
+            img.type = Image.Type.Tiled;
+            img.pixelsPerUnitMultiplier = img.sprite.rect.width / 504f; // same 72-unit grid as the other screens
             img.raycastTarget = true;
             return rt;
         }

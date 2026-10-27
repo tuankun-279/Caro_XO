@@ -43,6 +43,20 @@ namespace Caro.Game
         [SerializeField] private TMP_Text rightScore;
         [Tooltip("Robot icon over the AI's name; hidden in two-player mode")]
         [SerializeField] private GameObject aiIcon;
+        [Tooltip("Icons above the two scores (player or robot), used instead of the names")]
+        [SerializeField] private UnityEngine.UI.Image leftIcon;
+        [SerializeField] private UnityEngine.UI.Image rightIcon;
+
+        [Header("Turn bar (left = AI / X, right = you / O)")]
+        [SerializeField] private TurnAvatars turnAvatars;
+        [SerializeField] private Sprite robotSprite;
+        [Tooltip("Player icon for X (red) and O (blue)")]
+        [SerializeField] private Sprite personXSprite;
+        [SerializeField] private Sprite personOSprite;
+
+        [Header("Backdrop")]
+        [Tooltip("Camera background while the game screen is shown (around the board)")]
+        [SerializeField] private Color backdrop = new Color(1f, 0.973f, 0.906f);
 
         [Header("Status")]
         [SerializeField] private TMP_Text statusText;
@@ -239,10 +253,20 @@ namespace Caro.Game
             board.SetBoardArea(bottom, top - bottom);
         }
 
-        private void OnEnable() => _measuredScreen = default; // re-measure when coming back to the game screen
+        private Color _savedBackdrop;
+        private bool _backdropSet;
+
+        private void OnEnable()
+        {
+            _measuredScreen = default; // re-measure when coming back to the game screen
+            var cam = Camera.main;
+            if (cam != null) { _savedBackdrop = cam.backgroundColor; cam.backgroundColor = backdrop; _backdropSet = true; }
+        }
 
         private void OnDisable()
         {
+            if (_backdropSet && Camera.main != null) Camera.main.backgroundColor = _savedBackdrop;
+            _backdropSet = false;
             // Leaving the game screen: stop the AI and drop the pending popup. Both resume on return.
             CancelAI();
             CancelResult();
@@ -545,6 +569,16 @@ namespace Caro.Game
 
         private Color PieceColor(Piece p) => p == Piece.X ? xColor : oColor;
 
+        // Turn bar sides: vs AI the robot is on the left and the player on the right; two players X left, O right.
+        private Piece TurnLeftPiece => _mode == MatchMode.VsAI ? AIPiece : Piece.X;
+
+        /// <summary>Robot for the AI, otherwise a player icon in the colour of the piece.</summary>
+        private Sprite AvatarOf(Piece p)
+        {
+            if (_mode == MatchMode.VsAI && p == AIPiece) return robotSprite;
+            return p == Piece.X ? personXSprite : personOSprite;
+        }
+
         private string LeftNameText() => SideName(LeftPiece);
         private string RightNameText() => SideName(RightPiece);
 
@@ -589,6 +623,17 @@ namespace Caro.Game
             if (leftScore != null) { leftScore.text = ScoreOf(LeftPiece).ToString(); leftScore.color = PieceColor(LeftPiece); }
             if (rightScore != null) { rightScore.text = ScoreOf(RightPiece).ToString(); rightScore.color = PieceColor(RightPiece); }
             if (aiIcon != null) aiIcon.SetActive(_mode == MatchMode.VsAI);
+            if (leftIcon != null) leftIcon.sprite = AvatarOf(LeftPiece);
+            if (rightIcon != null) rightIcon.sprite = AvatarOf(RightPiece);
+
+            if (turnAvatars != null)
+            {
+                var tl = TurnLeftPiece;
+                turnAvatars.SetSprites(AvatarOf(tl), AvatarOf(tl.Opponent()));
+                var lit = _game.IsOver ? (_game.IsDraw ? Piece.None : _game.Winner) : _game.Turn;
+                turnAvatars.SetActive(lit == Piece.None ? TurnAvatars.Side.None
+                    : lit == tl ? TurnAvatars.Side.Left : TurnAvatars.Side.Right);
+            }
 
             if (statusText != null)
             {
