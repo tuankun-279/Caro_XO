@@ -16,7 +16,7 @@ namespace Caro.Game
         [SerializeField] private Image right;
         [SerializeField] private float activeScale = 1.15f;
         [SerializeField] private float idleScale = 0.85f;
-        [SerializeField] private Color idleTint = new Color(0.8f, 0.8f, 0.8f, 0.4f);
+        [SerializeField] private Color idleTint = new Color(1f, 1f, 1f, 0.45f); // faded but keeps its colour (red X / blue O)
         [Tooltip("How fast the avatars ease to their new look")]
         [SerializeField] private float speed = 10f;
         [Tooltip("Up/down movement of the active avatar, in canvas units")]
