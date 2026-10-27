@@ -463,19 +463,21 @@ namespace Caro.EditorTools
             edgeImg.type = Image.Type.Sliced;
             edgeImg.pixelsPerUnitMultiplier = 3f;
             edgeImg.raycastTarget = false;
+
+            // Pins holding the card on the cork board
+            Deco(card, "PinTopLeft", "doodles/pin_yellow", 0.05f, 0.004f, 64, -10, 1f);
+            Deco(card, "PinBottomRight", "doodles/pin_red", 0.95f, 0.996f, 64, 10, 1f);
         }
 
-        /// <summary>Square gray frame button with a × mark that closes a popup.</summary>
+        /// <summary>Red close button (white ×) for popups, with its pressed state.</summary>
         private static Button CloseButton(Transform parent, float x, float y, float size)
         {
-            var img = Pic(parent, "CloseButton", "buttons_square/button_frame_gray_normal", x, y, size);
+            var img = Pic(parent, "CloseButton", "buttons_square/close_normal", x, y, size);
             img.raycastTarget = true;
             var b = img.gameObject.AddComponent<Button>();
             b.targetGraphic = img;
             b.transition = Selectable.Transition.SpriteSwap;
-            b.spriteState = new SpriteState { pressedSprite = Spr("buttons_square/button_frame_gray_pressed") };
-            var mark = Txt(img.transform, "Mark", "×", 0, -4, size, size, size * 0.8f, Ink, TextAlignmentOptions.Center, local: true);
-            mark.fontStyle = FontStyles.Bold;
+            b.spriteState = new SpriteState { pressedSprite = Spr("buttons_square/close_pressed") };
             return b;
         }
 
@@ -507,9 +509,17 @@ namespace Caro.EditorTools
         /// </summary>
         private static void Background(RectTransform screen)
         {
+            // Cork board behind the page, repeated so it stays sharp; the page is pinned onto it
+            var cork = Stretch(screen, "Corkboard");
+            var corkImg = cork.gameObject.AddComponent<Image>();
+            corkImg.sprite = Spr("backgrounds/cork_tile");
+            corkImg.type = Image.Type.Tiled;
+            corkImg.pixelsPerUnitMultiplier = corkImg.sprite.rect.width / 420f; // one tile = 420 units
+            corkImg.raycastTarget = true;
+
             var rt = Stretch(screen, "Background");
-            rt.offsetMin = new Vector2(18, 18);
-            rt.offsetMax = new Vector2(-18, -18);
+            rt.offsetMin = new Vector2(30, 34);
+            rt.offsetMax = new Vector2(-30, -34);
 
             // The page starts PageLeft units in from the left so the spiral loops have room to wrap around its edge
             const float pageLeft = 32f;
@@ -564,6 +574,10 @@ namespace Caro.EditorTools
             Deco(rt, "Star", "doodles/doodle_star_outline", 0.90f, 0.33f, 80, 8, 1f);
             Deco(rt, "Star2", "doodles/doodle_star_outline", 0.88f, 0.69f, 64, -12, 1f);
             Deco(rt, "Swoosh", "doodles/doodle_swoosh", 0.80f, 0.90f, 260, 0, 1f);
+
+            // Push pins holding the page on the cork board
+            Deco(rt, "PinTopRight", "doodles/pin_red", 0.94f, 0.006f, 64, 12, 1f);
+            Deco(rt, "PinBottomRight", "doodles/pin_blue", 0.94f, 0.992f, 64, -10, 1f);
         }
 
         /// <summary>A background doodle anchored at a fraction of its parent (x from the left, y from the top).</summary>
