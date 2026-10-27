@@ -119,23 +119,7 @@ namespace Caro.EditorTools
             var twoP = Btn(safe, "TwoPlayerButton", "blue", 560, 1100, 780, 150, "Chơi 2 người", "icons/two_players_clean_edges", 115);
             var sett = Btn(safe, "SettingsButton", "gray", 560, 1280, 780, 150, "Cài đặt", "icons/settings_gear_clean_edges", 100);
 
-            // "Tỉ số gần đây": one centred block (notebook panel, tape, title and rows) that moves as a unit.
-            // Child positions are relative to the block centre (y down).
-            var recent = Place(new GameObject("RecentScores", typeof(RectTransform)), safe, 560, 1640, 620, 400);
-            var recentPanel = Sliced(recent, "Panel", "panels/notebook_note", 0, 0, 620, 400, 0);
-            recentPanel.anchorMin = Vector2.zero;
-            recentPanel.anchorMax = Vector2.one;
-            recentPanel.offsetMin = recentPanel.offsetMax = Vector2.zero;
-            PicLocal(recent, "Tape", "decorations/tape/red_tape_small", -285, -185, 120);
-            Txt(recent, "RecentTitle", "Tỉ số gần đây", 25, -140, 460, 70, 46, Ink, TextAlignmentOptions.Center, local: true);
-            var rows = new[] { "Máy – Dễ", "Máy – Vừa", "Máy – Khó", "2 người" };
-            var scores = new TMP_Text[4];
-            for (int i = 0; i < 4; i++)
-            {
-                float y = -65 + i * 66;
-                Txt(recent, "RecentLabel" + i, rows[i], -200, y, 300, 64, 38, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true, local: true);
-                scores[i] = Txt(recent, "RecentScore" + i, "0 - 0", 255, y, 160, 64, 38, Ink, TextAlignmentOptions.MidlineRight, pivotRight: true, local: true);
-            }
+            var scores = BuildRecentScores(safe);
 
             Pic(safe, "YellowStar", "doodles/yellow_star", 955, 1500, 70, 10);
             Pic(safe, "Pencil", "doodles/pencil_large", 965, 1760, 110, 0);
@@ -152,6 +136,69 @@ namespace Caro.EditorTools
             Set(menu, "twoPlayerLabel", Label(twoP));
             SetArray(menu, "recentScores", scores);
             return menu;
+        }
+
+        /// <summary>
+        /// "Tỉ số gần đây" block on the menu, centred under the buttons. Hierarchy:
+        /// RecentScores ─ PaperPanel, Tape, TitleText, RowList ─ Row_AiEasy, Row_AiMedium, Row_AiHard, Row_TwoPlayers,
+        /// and every row holds a ModeText (left) and a ScoreText (right). RowList is a vertical layout, so a row
+        /// can be added, removed or resized without moving the others by hand. Returns the four ScoreTexts.
+        /// </summary>
+        private static TMP_Text[] BuildRecentScores(RectTransform safe)
+        {
+            const float width = 620, height = 400;
+            var block = Place(new GameObject("RecentScores", typeof(RectTransform)), safe, 560, 1640, width, height);
+
+            var panel = Sliced(block, "PaperPanel", "panels/notebook_note", 0, 0, width, height, 0);
+            panel.anchorMin = Vector2.zero;
+            panel.anchorMax = Vector2.one;
+            panel.offsetMin = panel.offsetMax = Vector2.zero;
+
+            PicLocal(block, "Tape", "decorations/tape/red_tape_small", -285, -185, 120);
+            Txt(block, "TitleText", "Tỉ số gần đây", 25, -140, 460, 70, 46, Ink, TextAlignmentOptions.Center, local: true);
+
+            // Rows fill the paper below the title; the left inset clears the spiral rings of the panel art
+            var list = new GameObject("RowList", typeof(RectTransform), typeof(VerticalLayoutGroup));
+            var listRt = (RectTransform)list.transform;
+            listRt.SetParent(block, false);
+            listRt.anchorMin = Vector2.zero;
+            listRt.anchorMax = Vector2.one;
+            listRt.offsetMin = new Vector2(110, 35);   // left, bottom
+            listRt.offsetMax = new Vector2(-55, -103); // right, top (below the title)
+            var layout = list.GetComponent<VerticalLayoutGroup>();
+            layout.spacing = 2;
+            layout.childAlignment = TextAnchor.UpperCenter;
+            layout.childControlWidth = layout.childControlHeight = true;
+            layout.childForceExpandWidth = layout.childForceExpandHeight = true;
+
+            var rows = new (string name, string mode)[]
+            {
+                ("Row_AiEasy", "Máy – Dễ"),
+                ("Row_AiMedium", "Máy – Vừa"),
+                ("Row_AiHard", "Máy – Khó"),
+                ("Row_TwoPlayers", "2 người"),
+            };
+            var scores = new TMP_Text[rows.Length];
+            for (int i = 0; i < rows.Length; i++)
+            {
+                var row = new GameObject(rows[i].name, typeof(RectTransform));
+                row.transform.SetParent(listRt, false);
+                RowText(row.transform, "ModeText", rows[i].mode, 0f, 0.65f, TextAlignmentOptions.MidlineLeft);
+                scores[i] = RowText(row.transform, "ScoreText", "0 - 0", 0.65f, 1f, TextAlignmentOptions.MidlineRight);
+            }
+            LayoutRebuilder.ForceRebuildLayoutImmediate(listRt); // so the saved scene already has the row sizes
+            return scores;
+        }
+
+        /// <summary>A text filling a horizontal slice (fractions of the row width) of a score row.</summary>
+        private static TMP_Text RowText(Transform row, string name, string text, float fromX, float toX, TextAlignmentOptions align)
+        {
+            var t = Txt(row, name, text, 0, 0, 10, 10, 38, Ink, align, local: true);
+            var rt = t.rectTransform;
+            rt.anchorMin = new Vector2(fromX, 0);
+            rt.anchorMax = new Vector2(toX, 1);
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            return t;
         }
 
         private static ModeSelectScreen BuildModeSelect(Transform canvas)
