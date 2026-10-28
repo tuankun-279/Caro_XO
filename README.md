@@ -1,7 +1,7 @@
 # Caro X-O
 
 <p align="center">
-  <img src="docs/gameplay.gif" alt="Gameplay: menu, choosing a mode, a game against the AI and the result screen" width="300">
+  <img src="docs/gameplay.gif" alt="Gameplay: menu, settings popup, choosing a mode, a game against the AI and the result screen" width="300">
 </p>
 
 **Caro X-O** is a hand-drawn notebook-style **Caro (Gomoku, five in a row)** game for Android, built with Unity.
@@ -16,6 +16,8 @@ Play against a three-level AI or with a friend on the same phone.
 - Pinch to zoom, drag to pan, **undo** and resume an unfinished game
 - **Pen-and-paper feel**: X and O are drawn stroke by stroke, undo erases them diagonally, with recorded pencil sounds
 - Choose who moves first, sound, vibration and volume settings; recent scores per mode
+- Hand-drawn crayon art: a notebook page pinned on a cork board, turn avatars that light up for the side to move,
+  and a settings popup over a blurred screen
 - Vietnamese UI, with all text rendered by the engine (no text baked into images) so it can be localized
 
 ## The AI
