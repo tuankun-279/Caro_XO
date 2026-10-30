@@ -67,6 +67,10 @@ namespace Caro.Game
 
         public void Close() => gameObject.SetActive(false);
 
+        private void OnEnable() => Loc.Changed += Relabel;
+        private void OnDisable() => Loc.Changed -= Relabel;
+        private void Relabel() { if (_game != null) Select(_mode); }
+
         private void Select(MatchMode mode)
         {
             _mode = mode;
@@ -87,9 +91,9 @@ namespace Caro.Game
                 if (ai)
                 {
                     var (d, human) = _game.InProgressAISettings;
-                    resumeLabel.text = $"Chơi tiếp ván dở  ·  {GameScreen.DifficultyName(d)}, bạn cầm {human}";
+                    resumeLabel.text = Loc.F("Chơi tiếp ván dở  ·  {0}, bạn cầm {1}", GameScreen.DifficultyName(d), human);
                 }
-                else resumeLabel.text = "Chơi tiếp ván 2 người đang dở";
+                else resumeLabel.text = Loc.T("Chơi tiếp ván 2 người đang dở");
             }
         }
     }

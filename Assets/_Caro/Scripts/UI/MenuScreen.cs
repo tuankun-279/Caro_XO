@@ -30,24 +30,26 @@ namespace Caro.Game
 
         private void Awake()
         {
-            vsAiButton.onClick.AddListener(() => OpenModeSelect(MatchMode.VsAI));
-            twoPlayerButton.onClick.AddListener(() => OpenModeSelect(MatchMode.TwoPlayer));
+            // Every change of screen turns a notebook page (PageTurn); the game screen turns its own pages
+            // before raising MenuRequested / ChangeDifficultyRequested
+            vsAiButton.onClick.AddListener(() => PageTurn.Run(() => OpenModeSelect(MatchMode.VsAI)));
+            twoPlayerButton.onClick.AddListener(() => PageTurn.Run(() => OpenModeSelect(MatchMode.TwoPlayer)));
             // The settings popup opens over the menu, which stays visible (blurred) behind it
             settingsButton.onClick.AddListener(() => settings.Open(false, Refresh));
 
-            modeSelect.BackRequested += ShowMenu;
-            modeSelect.StartRequested += (mode, d) =>
+            modeSelect.BackRequested += () => PageTurn.Run(ShowMenu);
+            modeSelect.StartRequested += (mode, d) => PageTurn.Run(() =>
             {
                 EnterGame();
                 if (mode == MatchMode.VsAI) gameScreen.OpenVsAI(d, AiPrefs.LastHuman);
                 else gameScreen.OpenTwoPlayer(forceNew: true);
-            };
-            modeSelect.ResumeRequested += mode =>
+            });
+            modeSelect.ResumeRequested += mode => PageTurn.Run(() =>
             {
                 EnterGame();
                 if (mode == MatchMode.VsAI) gameScreen.ResumeVsAI();
                 else gameScreen.OpenTwoPlayer();
-            };
+            });
 
             gameScreen.MenuRequested += ShowMenu;
             gameScreen.ChangeDifficultyRequested += () => OpenModeSelect(MatchMode.VsAI);
@@ -91,8 +93,13 @@ namespace Caro.Game
             var (x, o) = GameScreen.LoadTwoPlayerScore();
             if (recentScores[3] != null) recentScores[3].text = $"{x} - {o}";
 
-            vsAiLabel.text = gameScreen.HasGameInProgress(MatchMode.VsAI) ? "Chơi với máy · đang dở" : "Chơi với máy";
-            twoPlayerLabel.text = gameScreen.HasGameInProgress(MatchMode.TwoPlayer) ? "Chơi 2 người · đang dở" : "Chơi 2 người";
+            vsAiLabel.text = InProgress(Loc.T("Chơi với máy"), gameScreen.HasGameInProgress(MatchMode.VsAI));
+            twoPlayerLabel.text = InProgress(Loc.T("Chơi 2 người"), gameScreen.HasGameInProgress(MatchMode.TwoPlayer));
         }
+
+        private static string InProgress(string label, bool inProgress) => inProgress ? Loc.F("{0} · đang dở", label) : label;
+
+        private void OnEnable() => Loc.Changed += Refresh;
+        private void OnDisable() => Loc.Changed -= Refresh;
     }
 }

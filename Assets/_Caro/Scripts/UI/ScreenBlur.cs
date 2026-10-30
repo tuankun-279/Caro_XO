@@ -10,6 +10,20 @@ namespace Caro.Game
     /// </summary>
     public static class ScreenBlur
     {
+        /// <summary>A sharp full-size copy of the current frame (for the page turn). Call after WaitForEndOfFrame.</summary>
+        public static RenderTexture Snapshot(RenderTexture target, out bool flipped)
+        {
+            int w = Mathf.Max(1, Screen.width), h = Mathf.Max(1, Screen.height);
+            if (target == null || target.width != w || target.height != h)
+            {
+                if (target != null) target.Release();
+                target = new RenderTexture(w, h, 0, RenderTextureFormat.ARGB32) { filterMode = FilterMode.Bilinear, name = "PageSnapshot" };
+            }
+            ScreenCapture.CaptureScreenshotIntoRenderTexture(target);
+            flipped = SystemInfo.graphicsUVStartsAtTop;
+            return target;
+        }
+
         /// <param name="target">Texture to reuse (resized if needed); pass null the first time.</param>
         /// <param name="halvings">How many times the frame is halved; 4 = 1/16 of the screen size.</param>
         /// <param name="flipped">True when the snapshot is upside down on this graphics API.</param>

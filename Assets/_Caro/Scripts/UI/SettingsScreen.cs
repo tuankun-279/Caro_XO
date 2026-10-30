@@ -23,12 +23,9 @@ namespace Caro.Game
         [Tooltip("Full-screen blurred snapshot of the screen behind; tapping it closes the popup")]
         [SerializeField] private RawImage blurBackdrop;
         [SerializeField] private Button backdropButton;
-        [Tooltip("The paper card holding the settings; it scales in when the popup opens")]
+        [Tooltip("The paper card holding the settings; the Animator (PopupOpen clip) fades and scales it in")]
         [SerializeField] private RectTransform popup;
         [SerializeField] private CanvasGroup group;
-        [SerializeField] private float openSeconds = 0.18f;
-        [Tooltip("Final size of the card, so some of the blurred screen shows around it")]
-        [SerializeField] private float popupScale = 0.92f;
         [Tooltip("How many times the snapshot is halved before being shown (more = blurrier)")]
         [SerializeField] private int blurHalvings = 4;
 
@@ -76,6 +73,9 @@ namespace Caro.Game
             };
         }
 
+        private void OnEnable() => Loc.Changed += Refresh;
+        private void OnDisable() => Loc.Changed -= Refresh;
+
         private void OnDestroy()
         {
             if (_blur != null) _blur.Release();
@@ -99,18 +99,19 @@ namespace Caro.Game
             theme.Set(0);
             theme.SetOptionEnabled(1, false); // "Giấy ô li" and "Tối giản" wait for their art
             theme.SetOptionEnabled(2, false);
-            if (firstPlayerNote != null)
-                firstPlayerNote.text = inAiGame ? "Đổi sẽ bắt đầu ván mới · tỉ số giữ nguyên" : "Áp dụng cho ván đấu máy tiếp theo";
             Refresh();
 
             if (_opening != null) StopCoroutine(_opening);
             _opening = StartCoroutine(OpenRoutine());
         }
 
-        /// <summary>Hidden for one frame while the screen behind is captured, then blurred in and scaled up.</summary>
+        /// <summary>
+        /// Captures the screen behind for the blurred backdrop. The card's fade and scale-in is the PopupOpen
+        /// clip of the Animator, which starts each time the popup is shown and keeps the card invisible on its
+        /// first frames, the ones captured here.
+        /// </summary>
         private IEnumerator OpenRoutine()
         {
-            if (group != null) { group.alpha = 0f; group.blocksRaycasts = true; }
             if (blurBackdrop != null) blurBackdrop.enabled = false;
             yield return new WaitForEndOfFrame();
 
@@ -121,16 +122,6 @@ namespace Caro.Game
                 blurBackdrop.uvRect = flipped ? new Rect(0, 1, 1, -1) : new Rect(0, 0, 1, 1);
                 blurBackdrop.enabled = true;
             }
-
-            for (float t = 0f; t < openSeconds; t += Time.unscaledDeltaTime)
-            {
-                float k = Mathf.SmoothStep(0f, 1f, t / openSeconds);
-                if (group != null) group.alpha = k;
-                if (popup != null) popup.localScale = Vector3.one * (popupScale * Mathf.Lerp(0.92f, 1f, k));
-                yield return null;
-            }
-            if (group != null) group.alpha = 1f;
-            if (popup != null) popup.localScale = Vector3.one * popupScale;
             _opening = null;
         }
 
@@ -147,6 +138,8 @@ namespace Caro.Game
 
         private void Refresh()
         {
+            if (firstPlayerNote != null)
+                firstPlayerNote.text = Loc.T(_inAiGame ? "Đổi sẽ bắt đầu ván mới · tỉ số giữ nguyên" : "Áp dụng cho ván đấu máy tiếp theo");
             Paint(soundToggle, Feedback.SoundOn);
             Paint(vibrationToggle, Feedback.VibrationOn);
             volumeSlider.interactable = Feedback.SoundOn;
@@ -156,7 +149,7 @@ namespace Caro.Game
         {
             if (b.targetGraphic is Image image) image.sprite = on ? toggleOn : toggleOff;
             var label = b.GetComponentInChildren<TMP_Text>();
-            if (label != null) label.text = on ? "Bật" : "Tắt";
+            if (label != null) label.text = Loc.T(on ? "Bật" : "Tắt");
         }
     }
 }

@@ -178,10 +178,11 @@ namespace Caro.Game
             if (resultScreen != null)
             {
                 resultScreen.Hide();
-                resultScreen.PlayAgainClicked += NewGame;
-                resultScreen.ReviewClicked += () => { HideResult(); Refresh(); };
+                // Leaving the result page turns the page (the menu and mode screens are changed inside the turn)
+                resultScreen.PlayAgainClicked += () => PageTurn.Run(NewGame);
+                resultScreen.ReviewClicked += () => PageTurn.Run(() => { HideResult(); Refresh(); });
                 resultScreen.MenuClicked += GoToMenu;
-                resultScreen.ChangeDifficultyClicked += () => { HideResult(); ChangeDifficultyRequested?.Invoke(); };
+                resultScreen.ChangeDifficultyClicked += () => PageTurn.Run(() => { HideResult(); ChangeDifficultyRequested?.Invoke(); });
             }
         }
 
@@ -258,6 +259,7 @@ namespace Caro.Game
         private void OnEnable()
         {
             _measuredScreen = default; // re-measure when coming back to the game screen
+            Loc.Changed += Refresh;
             var cam = Camera.main;
             if (cam != null) { _savedBackdrop = cam.backgroundColor; cam.backgroundColor = backdrop; _backdropSet = true; }
         }
@@ -266,6 +268,7 @@ namespace Caro.Game
         {
             if (_backdropSet && Camera.main != null) Camera.main.backgroundColor = _savedBackdrop;
             _backdropSet = false;
+            Loc.Changed -= Refresh;
             // Leaving the game screen: stop the AI and drop the pending popup. Both resume on return.
             CancelAI();
             CancelResult();
@@ -295,11 +298,11 @@ namespace Caro.Game
             NewGame();
         }
 
-        private void GoToMenu()
+        private void GoToMenu() => PageTurn.Run(() =>
         {
             HideResult();
             MenuRequested?.Invoke();
-        }
+        });
 
         // ================= New game / undo =================
 
@@ -482,29 +485,35 @@ namespace Caro.Game
             if (_game.IsDraw)
             {
                 kind = ResultKind.Draw;
-                title = "Hoà!";
-                subtitle = "Bàn cờ đã kín";
+                title = Loc.T("Hoà!");
+                subtitle = Loc.T("Bàn cờ đã kín");
             }
             else if (_mode == MatchMode.VsAI)
             {
                 bool won = _game.Winner == _human;
                 kind = won ? ResultKind.Win : ResultKind.Lose;
-                title = won ? $"<color={Hex(oColor)}>Bạn</color> <color={Hex(xColor)}>thắng!</color>"
-                            : $"<color={Hex(oColor)}>Máy</color> <color={Hex(xColor)}>thắng!</color>";
-                subtitle = won ? "Nối 5 quân liền thắng!" : "Thử lại nhé!";
+                title = Loc.F(won ? "<color={0}>Bạn</color> <color={1}>thắng!</color>"
+                                  : "<color={0}>Máy</color> <color={1}>thắng!</color>", Hex(oColor), Hex(xColor));
+                subtitle = Loc.T(won ? "Nối 5 quân liền thắng!" : "Thử lại nhé!");
             }
             else
             {
                 kind = ResultKind.Win;
                 var w = _game.Winner;
-                title = $"<color={Hex(w == Piece.X ? xColor : oColor)}>Người chơi {w}</color> <color={Hex(inkColor)}>thắng!</color>";
-                subtitle = "Nối 5 quân liền thắng!";
+                title = Loc.F("<color={0}>Người chơi {2}</color> <color={1}>thắng!</color>",
+                    Hex(w == Piece.X ? xColor : oColor), Hex(inkColor), w);
+                subtitle = Loc.T("Nối 5 quân liền thắng!");
             }
-            SetCovered(true);
-            resultScreen.Show(kind, title, subtitle, LeftNameText(), RightNameText(),
-                ScoreOf(LeftPiece), ScoreOf(RightPiece), PieceColor(LeftPiece), PieceColor(RightPiece),
-                _mode == MatchMode.VsAI);
-            UpdateInput();
+            // The result page is turned to over the board
+            PageTurn.Run(() =>
+            {
+                if (_game == null || !_game.IsOver) return; // undone or left while the page was being captured
+                SetCovered(true);
+                resultScreen.Show(kind, title, subtitle, LeftNameText(), RightNameText(),
+                    ScoreOf(LeftPiece), ScoreOf(RightPiece), PieceColor(LeftPiece), PieceColor(RightPiece),
+                    _mode == MatchMode.VsAI);
+                UpdateInput();
+            });
         }
 
         private void HideResult()
@@ -583,25 +592,19 @@ namespace Caro.Game
 
         private string SideName(Piece p)
         {
-            string who = _mode == MatchMode.TwoPlayer ? "Người chơi" : (p == _human ? "Bạn" : "Máy");
+            string who = Loc.T(_mode == MatchMode.TwoPlayer ? "Người chơi" : (p == _human ? "Bạn" : "Máy"));
             return $"{who} (<color={Hex(PieceColor(p))}>{p}</color>)";
         }
 
         // ================= HUD =================
 
         public static string DifficultyName(Difficulty d) =>
-            d == Difficulty.Easy ? "Dễ" : d == Difficulty.Medium ? "Vừa" : "Khó";
-
-        private string NameOf(Piece p)
-        {
-            if (_mode == MatchMode.TwoPlayer) return p == Piece.X ? "Người chơi X" : "Người chơi O";
-            return p == _human ? "Bạn" : "Máy";
-        }
+            Loc.T(d == Difficulty.Easy ? "Dễ" : d == Difficulty.Medium ? "Vừa" : "Khó");
 
         private string WinnerText(Piece winner)
         {
-            if (_mode == MatchMode.VsAI) return winner == _human ? "Bạn thắng!" : "Máy thắng!";
-            return $"{NameOf(winner)} thắng!";
+            if (_mode == MatchMode.VsAI) return Loc.T(winner == _human ? "Bạn thắng!" : "Máy thắng!");
+            return Loc.F("Người chơi {0} thắng!", winner);
         }
 
         private void UpdateInput()
@@ -616,7 +619,7 @@ namespace Caro.Game
             if (_game == null) return;
 
             if (modeLabel != null)
-                modeLabel.text = _mode == MatchMode.TwoPlayer ? "Chơi 2 người" : $"Chơi với máy - {DifficultyName(_difficulty)}";
+                modeLabel.text = _mode == MatchMode.TwoPlayer ? Loc.T("Chơi 2 người") : Loc.F("Chơi với máy - {0}", DifficultyName(_difficulty));
             if (leftName != null) leftName.text = LeftNameText();
             if (rightName != null) rightName.text = RightNameText();
             if (leftScore != null) { leftScore.text = ScoreOf(LeftPiece).ToString(); leftScore.color = PieceColor(LeftPiece); }
@@ -639,17 +642,17 @@ namespace Caro.Game
                 statusText.color = inkColor;
                 var turn = _game.Turn;
                 string piece = $"(<color={Hex(PieceColor(turn))}>{turn}</color>)";
-                if (_game.IsDraw) statusText.text = "Hoà! Bàn cờ đã kín";
+                if (_game.IsDraw) statusText.text = Loc.T("Hoà! Bàn cờ đã kín");
                 else if (_game.IsOver) statusText.text = WinnerText(_game.Winner);
-                else statusText.text = IsAITurn ? $"Máy đang nghĩ… {piece}"
-                    : _mode == MatchMode.VsAI ? $"Lượt của bạn {piece}"
-                    : $"Lượt của người chơi {piece}";
+                else statusText.text = Loc.F(IsAITurn ? "Máy đang nghĩ… {0}"
+                    : _mode == MatchMode.VsAI ? "Lượt của bạn {0}"
+                    : "Lượt của người chơi {0}", piece);
             }
 
             if (boardSizeText != null)
             {
                 var b = _game.Board;
-                boardSizeText.text = $"Bàn {b.Width} × {b.Height}  ·  tối đa {Board.MaxSize} × {Board.MaxSize}";
+                boardSizeText.text = Loc.F("Bàn {0} × {1}  ·  tối đa {2} × {2}", b.Width, b.Height, Board.MaxSize);
             }
 
             if (undoButton != null)

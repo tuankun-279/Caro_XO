@@ -32,6 +32,7 @@ namespace Caro.EditorTools
         {
             ("buttons/", new Vector4(70, 70, 70, 70)),
             ("controls/slider_track_", new Vector4(32, 0, 32, 0)),
+            ("controls/dropdown_", new Vector4(50, 50, 50, 50)),
             ("panels/notebook_note", new Vector4(100, 80, 60, 80)),
             ("panels/score_panel", new Vector4(80, 50, 50, 50)),
             ("panels/blank_paper_panel", new Vector4(80, 80, 80, 80)),
@@ -67,6 +68,7 @@ namespace Caro.EditorTools
 
             var cam = Camera.main;
             if (cam != null) cam.backgroundColor = Mint;
+            BuildPageTurn(cam);
 
             EditorSceneManager.MarkSceneDirty(canvas.scene);
             EditorSceneManager.SaveScene(canvas.scene);
@@ -132,8 +134,8 @@ namespace Caro.EditorTools
             Set(menu, "vsAiButton", vsAi);
             Set(menu, "twoPlayerButton", twoP);
             Set(menu, "settingsButton", sett);
-            Set(menu, "vsAiLabel", Label(vsAi));
-            Set(menu, "twoPlayerLabel", Label(twoP));
+            Set(menu, "vsAiLabel", Dyn(Label(vsAi)));
+            Set(menu, "twoPlayerLabel", Dyn(Label(twoP)));
             SetArray(menu, "recentScores", scores);
             return menu;
         }
@@ -240,7 +242,7 @@ namespace Caro.EditorTools
             Set(mode, "difficulty", diff);
             Set(mode, "difficultyLabel", diffLabel);
             Set(mode, "resumeButton", resume);
-            Set(mode, "resumeLabel", Label(resume));
+            Set(mode, "resumeLabel", Dyn(Label(resume)));
             Set(mode, "startButton", start);
             return mode;
         }
@@ -266,6 +268,7 @@ namespace Caro.EditorTools
             var avatars = turnBar.gameObject.AddComponent<TurnAvatars>();
             Set(avatars, "left", leftAvatar);
             Set(avatars, "right", rightAvatar);
+            Set(avatars, "animator", AvatarAnimator(turnBar.gameObject, leftAvatar.rectTransform.anchoredPosition, rightAvatar.rectTransform.anchoredPosition));
 
             // Bottom block: fit / undo / new game, then the score panel
             var bottom = Block(safe, "BottomBlock", false, 640);
@@ -347,8 +350,8 @@ namespace Caro.EditorTools
             var review = TextButton(safe, "ReviewButton", "<u>Xem lại bàn cờ</u>", 560, 1840, 500, 80, 40);
 
             var rs = root.gameObject.AddComponent<ResultScreen>();
-            Set(rs, "titleText", title);
-            Set(rs, "subtitleText", subtitle);
+            Set(rs, "titleText", Dyn(title));
+            Set(rs, "subtitleText", Dyn(subtitle));
             Set(rs, "art", art);
             Set(rs, "winArt", Spr("results/trophy_celebration"));
             Set(rs, "loseArt", Spr("results/result_lose"));
@@ -386,46 +389,59 @@ namespace Caro.EditorTools
             backdropButton.transition = Selectable.Transition.None;
 
             var safe = Safe(root);
-            const float cardTop = 110, cardHeight = 1680;
-            var popup = Place(new GameObject("Popup", typeof(RectTransform)), safe, 560, cardTop + cardHeight / 2, 960, cardHeight);
+            // The card is nearly as big as the screen so the settings keep their full size
+            const float cardTop = 60, cardHeight = 1790;
+            var popup = Place(new GameObject("Popup", typeof(RectTransform)), safe, 540, cardTop + cardHeight / 2, 1050, cardHeight);
             PaperCard(popup);
 
             var content = Place(new GameObject("Content", typeof(RectTransform)), popup, 520, 0, W, H);
             content.pivot = new Vector2(0.5f, 1f);
-            content.anchoredPosition = new Vector2(-20, 90);
+            content.anchoredPosition = new Vector2(0, 70);
 
             Txt(content, "TitleText", "Cài đặt", 560, 150, 600, 100, 58, Ink, TextAlignmentOptions.Center);
             var close = CloseButton(content, 965, 150, 96);
 
+            // Language picker (row at the top; its list drops down over the rows below)
+            var language = BuildLanguagePicker(content, 280);
+
             // Sound card
-            Pic(content, "MusicIcon", "icons/music_note", 145, 290, 70);
-            Txt(content, "SoundTitle", "Âm thanh", 200, 290, 600, 80, 52, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
-            Sliced(content, "SoundCard", "panels/notebook_note", 560, 530, 900, 360, 0);
-            Pic(content, "VolumeIcon", "icons/volume_icon_clean_edges", 200, 425, 70);
-            var slider = MakeSlider(content, 610, 425, 640);
-            Txt(content, "SoundLabel", "Bật âm thanh", 200, 535, 500, 70, 44, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
-            var sound = Toggle(content, "SoundToggle", 860, 535);
-            Txt(content, "VibrationLabel", "Rung", 200, 640, 500, 70, 44, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
-            var vib = Toggle(content, "VibrationToggle", 860, 640);
+            const float d = 100; // everything below the language row moved down by this much
+            Pic(content, "MusicIcon", "icons/music_note", 145, 290 + d, 70);
+            Txt(content, "SoundTitle", "Âm thanh", 200, 290 + d, 600, 80, 52, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
+            Sliced(content, "SoundCard", "panels/notebook_note", 560, 530 + d, 900, 360, 0);
+            Pic(content, "VolumeIcon", "icons/volume_icon_clean_edges", 200, 425 + d, 70);
+            var slider = MakeSlider(content, 610, 425 + d, 640);
+            Txt(content, "SoundLabel", "Bật âm thanh", 200, 535 + d, 500, 70, 44, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
+            var sound = Toggle(content, "SoundToggle", 860, 535 + d);
+            Txt(content, "VibrationLabel", "Rung", 200, 640 + d, 500, 70, 44, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
+            var vib = Toggle(content, "VibrationToggle", 860, 640 + d);
 
             // Who moves first against the AI
-            Txt(content, "FirstTitle", "Ai đi trước <size=80%>(chơi với máy)</size>", 120, 790, 880, 70, 48, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
-            var first = Options(content, "FirstPlayer", new[] { "Bạn", "Máy" }, 885, 400, 110);
-            var firstNote = Txt(content, "FirstNote", "", 560, 965, 900, 50, 32, Quiet, TextAlignmentOptions.Center);
+            Txt(content, "FirstTitle", "Ai đi trước <size=80%>(chơi với máy)</size>", 120, 790 + d, 880, 70, 48, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
+            var first = Options(content, "FirstPlayer", new[] { "Bạn", "Máy" }, 885 + d, 400, 110);
+            var firstNote = Dyn(Txt(content, "FirstNote", "", 560, 965 + d, 900, 50, 32, Quiet, TextAlignmentOptions.Center));
 
             // Difficulty
-            Pic(content, "ChartIcon", "icons/bar_chart", 145, 1060, 70);
-            Txt(content, "DifficultyTitle", "Độ khó <size=80%>(chơi với máy)</size>", 200, 1060, 820, 80, 48, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
-            var diff = Options(content, "Difficulty", new[] { "Dễ", "Vừa", "Khó" }, 1160, 270, 110);
+            Pic(content, "ChartIcon", "icons/bar_chart", 145, 1060 + d, 70);
+            Txt(content, "DifficultyTitle", "Độ khó <size=80%>(chơi với máy)</size>", 200, 1060 + d, 820, 80, 48, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
+            var diff = Options(content, "Difficulty", new[] { "Dễ", "Vừa", "Khó" }, 1160 + d, 270, 110);
 
-            // Theme: preview thumbnails above the option buttons
-            Pic(content, "PaletteIcon", "icons/palette", 145, 1290, 70);
-            Txt(content, "ThemeTitle", "Giao diện", 200, 1290, 600, 80, 48, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
+            // Theme: preview thumbnails above the option buttons (smaller than before to make room for the language row)
+            Pic(content, "PaletteIcon", "icons/palette", 145, 1290 + d, 70);
+            Txt(content, "ThemeTitle", "Giao diện", 200, 1290 + d, 600, 80, 48, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
             var thumbs = new[] { "themes/theme_notebook", "themes/theme_grid", "themes/theme_minimal_dark" };
             for (int i = 0; i < 3; i++)
-                Pic(content, "ThemePreview" + i, thumbs[i], 560 + (i - 1) * 300, 1450, 200);
-            var theme = Options(content, "Theme", new[] { "Mặc định", "Giấy ô li", "Tối giản" }, 1620, 270, 100, 38);
-            Txt(content, "ThemeNote", "Giấy ô li và Tối giản: chờ asset giao diện từ designer", 560, 1715, 900, 50, 30, Quiet, TextAlignmentOptions.Center);
+                Pic(content, "ThemePreview" + i, thumbs[i], 560 + (i - 1) * 300, 1530, 160);
+            var theme = Options(content, "Theme", new[] { "Mặc định", "Giấy ô li", "Tối giản" }, 1690, 270, 90, 38);
+            language.transform.SetAsLastSibling();
+
+            // Opening motion: an Animator clip (fade and scale-in), kept invisible on the first frames while the
+            // screen behind is captured for the blur
+            var open = new AnimationClip { frameRate = 60 };
+            CaroAnimTools.GroupAlpha(open, "", (0, 0), (0.04f, 0), (0.2f, 1));
+            CaroAnimTools.Scale(open, "SafeArea/Popup", (0, 0.9f), (0.04f, 0.9f), (0.2f, 1.02f), (0.27f, 1));
+            CaroAnimTools.Save(open, "PopupOpen");
+            root.gameObject.AddComponent<Animator>().runtimeAnimatorController = CaroAnimTools.SingleClip("PopupOpen", open);
 
             var ss = root.gameObject.AddComponent<SettingsScreen>();
             Set(ss, "backButton", close);
@@ -443,6 +459,197 @@ namespace Caro.EditorTools
             Set(ss, "difficulty", diff);
             Set(ss, "theme", theme);
             return ss;
+        }
+
+        /// <summary>
+        /// "Ngôn ngữ" row: globe icon, title and a paper field with the current language and a chevron. Tapping
+        /// the field drops down a list with one row per language; a full-screen invisible blocker under the list
+        /// closes it. Uses the language art of Round 8 when present and existing art otherwise.
+        /// </summary>
+        private static LanguageDropdown BuildLanguagePicker(RectTransform content, float y)
+        {
+            var root = Stretch(content, "LanguagePicker");
+            if (SprOpt("icons/globe") != null) Pic(root, "GlobeIcon", "icons/globe", 145, y, 70);
+            Txt(root, "LanguageTitle", "Ngôn ngữ", 200, y, 400, 80, 52, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
+
+            // Blocker first so the field and the list draw (and take taps) above it
+            var blockerRt = Stretch(root, "Blocker");
+            blockerRt.offsetMin = new Vector2(-3000, -3000);
+            blockerRt.offsetMax = new Vector2(3000, 3000);
+            var blockerImg = blockerRt.gameObject.AddComponent<Image>();
+            blockerImg.color = new Color(0, 0, 0, 0);
+            var blocker = blockerRt.gameObject.AddComponent<Button>();
+            blocker.targetGraphic = blockerImg;
+            blocker.transition = Selectable.Transition.None;
+
+            const float fx = 770, fw = 380, fh = 100;
+            Button field;
+            if (SprOpt("controls/dropdown_field") != null)
+            {
+                var rt = Sliced(root, "Field", "controls/dropdown_field", fx, y, fw, fh, 0);
+                var img = rt.GetComponent<Image>();
+                img.raycastTarget = true;
+                field = rt.gameObject.AddComponent<Button>();
+                field.targetGraphic = img;
+                field.transition = Selectable.Transition.ColorTint;
+            }
+            else field = Card(root, "Field", "gray", fx, y, fw, fh).GetComponent<Button>();
+            var fieldLabel = Dyn(Txt(field.transform, "Label", "English", -35, 0, fw - 120, fh, 44, Ink, TextAlignmentOptions.Center, local: true));
+
+            Image chevron;
+            Sprite down = SprOpt("controls/chevron_down"), up = SprOpt("controls/chevron_up");
+            if (down != null) chevron = PicLocal(field.transform, "Chevron", "controls/chevron_down", fw / 2 - 55, 0, 44);
+            else
+            {
+                // Fallback: the back arrow turned to point down
+                chevron = PicLocal(field.transform, "Chevron", "icons/back_arrow", fw / 2 - 55, 0, 44);
+                chevron.rectTransform.localRotation = Quaternion.Euler(0, 0, 90);
+                down = chevron.sprite;
+            }
+
+            // Dropped-down list under the field
+            const float rowH = 100;
+            int count = System.Enum.GetValues(typeof(Language)).Length;
+            float listH = count * rowH + 40, listTop = y + fh / 2 + 10;
+            string listArt = SprOpt("controls/dropdown_list") != null ? "controls/dropdown_list" : "panels/blank_paper_panel";
+            var list = Sliced(root, "List", listArt, fx, listTop + listH / 2, fw, listH, 0);
+            list.GetComponent<Image>().raycastTarget = true; // taps on the list margin must not reach the blocker
+            string checkArt = SprOpt("controls/check_mark") != null ? "controls/check_mark" : "controls/checkbox_checked";
+            var rows = new Button[count];
+            var labels = new TMP_Text[count];
+            var checks = new GameObject[count];
+            for (int i = 0; i < count; i++)
+            {
+                var row = new GameObject(((Language)i).ToString(), typeof(RectTransform), typeof(Image));
+                var rowRt = (RectTransform)row.transform;
+                rowRt.SetParent(list, false);
+                rowRt.anchorMin = rowRt.anchorMax = new Vector2(0.5f, 1f);
+                rowRt.sizeDelta = new Vector2(fw - 40, rowH);
+                rowRt.anchoredPosition = new Vector2(0, -20 - rowH / 2 - i * rowH);
+                var rowImg = row.GetComponent<Image>();
+                rowImg.color = new Color(1, 1, 1, 0);
+                rows[i] = row.AddComponent<Button>();
+                rows[i].targetGraphic = rowImg;
+                rows[i].transition = Selectable.Transition.None;
+                labels[i] = Dyn(Txt(rowRt, "Label", Loc.NativeName((Language)i), -30, 0, fw - 120, rowH, 42, Ink, TextAlignmentOptions.MidlineLeft, local: true));
+                checks[i] = PicLocal(rowRt, "Check", checkArt, (fw - 40) / 2 - 40, 0, 48).gameObject;
+            }
+            list.gameObject.SetActive(false);
+            blockerRt.gameObject.SetActive(false);
+
+            var picker = root.gameObject.AddComponent<LanguageDropdown>();
+            Set(picker, "field", field);
+            Set(picker, "fieldLabel", fieldLabel);
+            Set(picker, "chevron", chevron);
+            Set(picker, "chevronDown", down);
+            Set(picker, "chevronUp", up);
+            Set(picker, "list", list.gameObject);
+            Set(picker, "blocker", blocker);
+            SetArray(picker, "rows", rows);
+            SetArray(picker, "rowLabels", labels);
+            SetArray(picker, "rowChecks", checks);
+            return picker;
+        }
+
+        /// <summary>
+        /// Animator of the turn bar: TurnNone / TurnLeft / TurnRight clips (state = TurnAvatars.Side). The side
+        /// to move is larger, opaque and bobs up and down; the other is smaller and faded.
+        /// </summary>
+        private static Animator AvatarAnimator(GameObject bar, Vector2 leftPos, Vector2 rightPos)
+        {
+            const float active = 1.15f, idle = 0.85f, faded = 0.45f, bob = 5f, period = 1.6f;
+            AnimationClip Make(string name, bool leftOn, bool rightOn)
+            {
+                var clip = new AnimationClip { frameRate = 60 };
+                void Side(string path, Vector2 pos, bool on)
+                {
+                    float sc = on ? active : idle;
+                    CaroAnimTools.Scale(clip, path, (0, sc), (period, sc));
+                    clip.SetCurve(path, typeof(Image), "m_Color.a", CaroAnimTools.Curve((0, on ? 1 : faded), (period, on ? 1 : faded)));
+                    CaroAnimTools.Pos(clip, path, 'x', (0, pos.x), (period, pos.x));
+                    if (on) CaroAnimTools.Pos(clip, path, 'y', (0, pos.y), (period / 4, pos.y + bob), (period / 2, pos.y), (period * 3 / 4, pos.y - bob), (period, pos.y));
+                    else CaroAnimTools.Pos(clip, path, 'y', (0, pos.y), (period, pos.y));
+                }
+                Side("LeftAvatar", leftPos, leftOn);
+                Side("RightAvatar", rightPos, rightOn);
+                return CaroAnimTools.SaveLooping(clip, name);
+            }
+            var none = Make("TurnNone", false, false);
+            var left = Make("TurnLeft", true, false);
+            var right = Make("TurnRight", false, true);
+            var animator = bar.AddComponent<Animator>();
+            animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+            animator.keepAnimatorStateOnDisable = true;
+            animator.runtimeAnimatorController = CaroAnimTools.IntStates("TurnAvatars", "Side", 0.15f, none, left, right);
+            return animator;
+        }
+
+        /// <summary>
+        /// Transition canvas drawn over the UI: a page holding a snapshot of the screen being left. The PageTurn
+        /// clip folds it over the spiral on the left (rotation around its left edge, away from the camera), darkens
+        /// it as it turns and shades the new page under it; PageTurn.cs only takes the snapshot and sets the trigger.
+        /// </summary>
+        private static void BuildPageTurn(Camera cam)
+        {
+            var old = GameObject.Find("Transition Canvas");
+            if (old != null) Object.DestroyImmediate(old);
+            var root = new GameObject("Transition Canvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler),
+                typeof(GraphicRaycaster), typeof(CanvasGroup));
+            var canvas = root.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceCamera;
+            canvas.worldCamera = cam;
+            canvas.planeDistance = 4.5f;
+            canvas.sortingOrder = 40; // over the UI (10), under the splash (50)
+            var scaler = root.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(W, H);
+            scaler.matchWidthOrHeight = 0.5f;
+            var group = root.GetComponent<CanvasGroup>();
+            group.blocksRaycasts = false;
+            var rt = (RectTransform)root.transform;
+
+            // Invisible blocker: takes the taps while the page turns (the group decides when)
+            var blocker = Stretch(rt, "Blocker").gameObject.AddComponent<Image>();
+            blocker.color = new Color(0, 0, 0, 0);
+
+            var under = Stretch(rt, "UnderShadow").gameObject.AddComponent<Image>();
+            under.color = new Color(0.12f, 0.1f, 0.08f, 0f);
+            under.raycastTarget = false;
+
+            var page = Stretch(rt, "Page");
+            page.pivot = new Vector2(0f, 0.5f); // turns around the spiral on the left edge
+            page.offsetMin = page.offsetMax = Vector2.zero;
+            var snap = Stretch(page, "Snapshot").gameObject.AddComponent<RawImage>();
+            snap.raycastTarget = false;
+            var shade = Stretch(page, "Shade").gameObject.AddComponent<Image>();
+            shade.color = new Color(0.12f, 0.1f, 0.08f, 0f);
+            shade.raycastTarget = false;
+            page.gameObject.SetActive(false);
+
+            const float turn = 0.5f;
+            var idle = new AnimationClip { frameRate = 60 };
+            CaroAnimTools.Active(idle, "Page", (0, 0), (1f / 60, 0));
+            CaroAnimTools.ImageAlpha(idle, "UnderShadow", (0, 0), (1f / 60, 0));
+            CaroAnimTools.Save(idle, "PageIdle");
+
+            var clip = new AnimationClip { frameRate = 60 };
+            CaroAnimTools.Active(clip, "Page", (0, 1), (turn, 0));
+            // Slow lift, then the page falls over towards the spiral
+            CaroAnimTools.Rot(clip, "Page", 'y', (0, 0), (0.12f, -12), (turn - 0.02f, -90), (turn, -90));
+            CaroAnimTools.ScaleY(clip, "Page", (0, 1), (0.2f, 1.03f), (turn, 1));
+            CaroAnimTools.ImageAlpha(clip, "Page/Shade", (0, 0), (0.15f, 0.08f), (turn, 0.45f));
+            CaroAnimTools.ImageAlpha(clip, "UnderShadow", (0, 0.3f), (turn, 0));
+            CaroAnimTools.Events(clip, new AnimationEvent { time = turn, functionName = "TurnFinished" });
+            CaroAnimTools.Save(clip, "PageTurn");
+
+            var animator = root.AddComponent<Animator>();
+            animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+            animator.runtimeAnimatorController = CaroAnimTools.IdleAndTrigger("PageTurn", idle, clip, "Turn");
+
+            var pt = root.AddComponent<PageTurn>();
+            Set(pt, "animator", animator);
+            Set(pt, "page", snap);
+            Set(pt, "group", group);
         }
 
         /// <summary>A card of grid paper with the hand-drawn page edge (used for popups); it blocks clicks.</summary>
@@ -509,7 +716,8 @@ namespace Caro.EditorTools
         /// </summary>
         private static void Background(RectTransform screen)
         {
-            // Cork board behind the page, repeated so it stays sharp; the page is pinned onto it
+            // Cork board behind the page, repeated so it stays sharp. The page fills the screen; the cork only
+            // shows on the far left, between the spiral loops
             var cork = Stretch(screen, "Corkboard");
             var corkImg = cork.gameObject.AddComponent<Image>();
             corkImg.sprite = Spr("backgrounds/cork_tile");
@@ -518,25 +726,28 @@ namespace Caro.EditorTools
             corkImg.raycastTarget = true;
 
             var rt = Stretch(screen, "Background");
-            rt.offsetMin = new Vector2(30, 34);
-            rt.offsetMax = new Vector2(-30, -34);
 
-            // The page starts PageLeft units in from the left so the spiral loops have room to wrap around its edge
-            const float pageLeft = 32f;
+            // The spiral column starts at the left edge of the screen; the page starts where its loops wrap
+            // around the page edge (47% across a loop)
+            const float spiralWidth = 90f;
+            const float edgeInTile = 240f / 508f;
+            const float pageLeft = spiralWidth * edgeInTile;
 
             // Grid paper: one tile holds 7 × 7 cells and is shown 504 units wide (72 units per cell)
             var paper = Stretch(rt, "Paper");
-            paper.offsetMin = new Vector2(pageLeft + 20, 20);
-            paper.offsetMax = new Vector2(-20, -20);
+            paper.offsetMin = new Vector2(pageLeft, 0);
+            paper.offsetMax = Vector2.zero;
             var paperImg = paper.gameObject.AddComponent<Image>();
             paperImg.sprite = Spr("backgrounds/bg_paper_tile");
             paperImg.type = Image.Type.Tiled;
             paperImg.pixelsPerUnitMultiplier = paperImg.sprite.rect.width / 504f;
             paperImg.raycastTarget = true;
 
-            // Page edge: transparent inside, its 80 px band shown about 27 units wide
+            // Page edge: transparent inside, its 80 px band shown about 27 units wide. Only its left side is
+            // wanted, so the other three sides (and the rounded corners) lie outside the screen.
             var edge = Stretch(rt, "PageEdge");
-            edge.offsetMin = new Vector2(pageLeft, 0);
+            edge.offsetMin = new Vector2(pageLeft, -200);
+            edge.offsetMax = new Vector2(200, 200);
             var edgeImg = edge.gameObject.AddComponent<Image>();
             edgeImg.sprite = Spr("backgrounds/bg_page_frame");
             edgeImg.type = Image.Type.Sliced;
@@ -549,8 +760,6 @@ namespace Caro.EditorTools
             var coil = AssetDatabase.LoadAssetAtPath<Sprite>(Art + "backgrounds/notebook_spiral_coil.png");
             if (coil != null)
             {
-                const float spiralWidth = 90f;
-                const float edgeInTile = 240f / 508f;
                 var spiral = new GameObject("Spiral", typeof(RectTransform), typeof(Image));
                 var srt = (RectTransform)spiral.transform;
                 srt.SetParent(rt, false);
@@ -558,14 +767,14 @@ namespace Caro.EditorTools
                 srt.anchorMax = new Vector2(0, 0.5f);
                 srt.pivot = new Vector2(0.5f, 0.5f);
                 srt.sizeDelta = new Vector2(spiralWidth, 400);
-                srt.anchoredPosition = new Vector2(pageLeft - edgeInTile * spiralWidth + spiralWidth / 2, 0);
+                srt.anchoredPosition = new Vector2(spiralWidth / 2, 0); // flush with the left edge of the screen
                 var spiralImg = spiral.GetComponent<Image>();
                 spiralImg.sprite = coil;
                 spiralImg.type = Image.Type.Tiled;
                 spiralImg.pixelsPerUnitMultiplier = coil.rect.width / spiralWidth;
                 spiralImg.raycastTarget = false;
                 float tile = coil.rect.height * spiralWidth / coil.rect.width;
-                spiral.AddComponent<WholeTileColumn>().Configure(tile, 48f);
+                spiral.AddComponent<WholeTileColumn>().Configure(tile, 12f);
             }
 
             // Doodles, placed as fractions of the page so they keep their spots on any aspect ratio
@@ -575,9 +784,6 @@ namespace Caro.EditorTools
             Deco(rt, "Star2", "doodles/doodle_star_outline", 0.88f, 0.69f, 64, -12, 1f);
             Deco(rt, "Swoosh", "doodles/doodle_swoosh", 0.80f, 0.90f, 260, 0, 1f);
 
-            // Push pins holding the page on the cork board
-            Deco(rt, "PinTopRight", "doodles/pin_red", 0.94f, 0.006f, 64, 12, 1f);
-            Deco(rt, "PinBottomRight", "doodles/pin_blue", 0.94f, 0.992f, 64, -10, 1f);
         }
 
         /// <summary>A background doodle anchored at a fraction of its parent (x from the left, y from the top).</summary>
@@ -641,6 +847,9 @@ namespace Caro.EditorTools
             }
             return rt;
         }
+
+        /// <summary>The sprite at <paramref name="path"/>, or null when that art has not been delivered.</summary>
+        private static Sprite SprOpt(string path) => AssetDatabase.LoadAssetAtPath<Sprite>(Art + path + ".png");
 
         private static Sprite Spr(string path)
         {
@@ -725,6 +934,16 @@ namespace Caro.EditorTools
             t.textWrappingMode = TextWrappingModes.Normal;
             t.overflowMode = TextOverflowModes.Overflow;
             t.raycastTarget = false;
+            // Fixed labels follow the chosen language; texts that a screen rewrites at run time opt out with Dyn()
+            if (Loc.Has(text)) go.AddComponent<LocalizedText>().Key = text;
+            return t;
+        }
+
+        /// <summary>Marks a text as written by its screen at run time, so it gets no LocalizedText.</summary>
+        private static TMP_Text Dyn(TMP_Text t)
+        {
+            var l = t.GetComponent<LocalizedText>();
+            if (l != null) Object.DestroyImmediate(l);
             return t;
         }
 
