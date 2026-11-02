@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using Caro.AI;
 using Caro.Core;
+using Caro.Monetization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -46,6 +47,15 @@ namespace Caro.Game
         [Tooltip("Mặc định, Giấy ô li, Tối giản")]
         [SerializeField] private OptionGroup theme;
 
+        [Header("Purchases")]
+        [Tooltip("Buys \"Remove Ads\"; hidden once owned or while the store is unavailable")]
+        [SerializeField] private Button removeAdsButton;
+        [SerializeField] private TMP_Text removeAdsLabel;
+        [Tooltip("Shown instead of the button once \"Remove Ads\" is owned")]
+        [SerializeField] private TMP_Text adsRemovedNote;
+        [Tooltip("Restore purchases (iOS only)")]
+        [SerializeField] private Button restoreButton;
+
         public bool IsShown => gameObject.activeSelf;
 
         private Action _onClosed;
@@ -62,6 +72,8 @@ namespace Caro.Game
             soundToggle.onClick.AddListener(() => { Feedback.SoundOn = !Feedback.SoundOn; Refresh(); });
             vibrationToggle.onClick.AddListener(() => { Feedback.VibrationOn = !Feedback.VibrationOn; Refresh(); });
             difficulty.Changed += i => AiPrefs.LastDifficulty = (Difficulty)i;
+            if (removeAdsButton != null) removeAdsButton.onClick.AddListener(() => Services.Purchases.BuyRemoveAds());
+            if (restoreButton != null) restoreButton.onClick.AddListener(() => Services.Purchases.Restore());
             firstPlayer.Changed += i =>
             {
                 bool aiFirst = i == 1;
@@ -73,8 +85,40 @@ namespace Caro.Game
             };
         }
 
-        private void OnEnable() => Loc.Changed += Refresh;
-        private void OnDisable() => Loc.Changed -= Refresh;
+        private void OnEnable()
+        {
+            Loc.Changed += Refresh;
+            Services.Purchases.Changed += RefreshPurchases; // the store answers (price, purchase) while the popup is open
+        }
+
+        private void OnDisable()
+        {
+            Loc.Changed -= Refresh;
+            Services.Purchases.Changed -= RefreshPurchases;
+        }
+
+        /// <summary>"Remove Ads" row: the button with the store price, or a thank-you note once owned.</summary>
+        private void RefreshPurchases()
+        {
+            var store = Services.Purchases;
+            bool owned = store.OwnsRemoveAds;
+            if (removeAdsButton != null)
+            {
+                removeAdsButton.gameObject.SetActive(!owned && (store.IsReady || store.IsPurchasing));
+                removeAdsButton.interactable = store.IsReady && !store.IsPurchasing;
+            }
+            if (removeAdsLabel != null)
+                removeAdsLabel.text = string.IsNullOrEmpty(store.RemoveAdsPrice)
+                    ? Loc.T("Xoá quảng cáo")
+                    : Loc.F("Xoá quảng cáo · {0}", store.RemoveAdsPrice);
+            if (adsRemovedNote != null)
+            {
+                adsRemovedNote.gameObject.SetActive(owned);
+                adsRemovedNote.text = Loc.T("Đã tắt quảng cáo. Cảm ơn bạn!");
+            }
+            if (restoreButton != null)
+                restoreButton.gameObject.SetActive(Application.platform == RuntimePlatform.IPhonePlayer && !owned);
+        }
 
         private void OnDestroy()
         {
@@ -140,6 +184,7 @@ namespace Caro.Game
         {
             if (firstPlayerNote != null)
                 firstPlayerNote.text = Loc.T(_inAiGame ? "Đổi sẽ bắt đầu ván mới · tỉ số giữ nguyên" : "Áp dụng cho ván đấu máy tiếp theo");
+            RefreshPurchases();
             Paint(soundToggle, Feedback.SoundOn);
             Paint(vibrationToggle, Feedback.VibrationOn);
             volumeSlider.interactable = Feedback.SoundOn;

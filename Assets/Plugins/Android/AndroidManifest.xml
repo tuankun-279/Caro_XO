@@ -11,4 +11,6 @@
     </activity>
   </application>
   <uses-permission android:name="android.permission.VIBRATE" />
+  <!-- Advertising ID for ads on Android 13+ (LevelPlay) -->
+  <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 </manifest>

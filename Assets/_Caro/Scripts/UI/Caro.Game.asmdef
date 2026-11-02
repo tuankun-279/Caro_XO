@@ -4,6 +4,7 @@
     "references": [
         "Caro.Core",
         "Caro.AI",
+        "Caro.Monetization",
         "UniTask",
         "Unity.InputSystem",
         "Unity.TextMeshPro",

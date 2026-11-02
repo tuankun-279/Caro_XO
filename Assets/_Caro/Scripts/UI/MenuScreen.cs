@@ -1,4 +1,5 @@
 using Caro.AI;
+using Caro.Monetization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,6 +10,8 @@ namespace Caro.Game
     /// Main menu (mockup 1) and navigation between the five screens:
     /// menu → mode selection → game → result, with settings reachable from the menu and the game.
     /// Going back to the menu mid-game keeps the game so it can be resumed.
+    /// The top corner offers "Remove Ads" (with the store price) until it is owned, and on iOS a
+    /// "Restore purchases" link, as Apple requires.
     /// </summary>
     public class MenuScreen : MonoBehaviour
     {
@@ -21,6 +24,13 @@ namespace Caro.Game
         [SerializeField] private Button vsAiButton;
         [SerializeField] private Button twoPlayerButton;
         [SerializeField] private Button settingsButton;
+
+        [Header("Purchases (optional)")]
+        [Tooltip("Text link that buys \"Remove Ads\"; hidden once owned or while the store is unavailable")]
+        [SerializeField] private Button removeAdsButton;
+        [SerializeField] private TMP_Text removeAdsLabel;
+        [Tooltip("\"Restore purchases\" link, shown on iOS only (Android restores automatically at startup)")]
+        [SerializeField] private Button restoreButton;
 
         [Header("Labels")]
         [SerializeField] private TMP_Text vsAiLabel;
@@ -36,6 +46,8 @@ namespace Caro.Game
             twoPlayerButton.onClick.AddListener(() => PageTurn.Run(() => OpenModeSelect(MatchMode.TwoPlayer)));
             // The settings popup opens over the menu, which stays visible (blurred) behind it
             settingsButton.onClick.AddListener(() => settings.Open(false, Refresh));
+            if (removeAdsButton != null) removeAdsButton.onClick.AddListener(() => Services.Purchases.BuyRemoveAds());
+            if (restoreButton != null) restoreButton.onClick.AddListener(() => Services.Purchases.Restore());
 
             modeSelect.BackRequested += () => PageTurn.Run(ShowMenu);
             modeSelect.StartRequested += (mode, d) => PageTurn.Run(() =>
@@ -95,11 +107,39 @@ namespace Caro.Game
 
             vsAiLabel.text = InProgress(Loc.T("Chơi với máy"), gameScreen.HasGameInProgress(MatchMode.VsAI));
             twoPlayerLabel.text = InProgress(Loc.T("Chơi 2 người"), gameScreen.HasGameInProgress(MatchMode.TwoPlayer));
+            RefreshPurchases();
+        }
+
+        private void RefreshPurchases()
+        {
+            var store = Services.Purchases;
+            if (removeAdsButton != null)
+            {
+                bool offer = !store.OwnsRemoveAds && (store.IsReady || store.IsPurchasing);
+                removeAdsButton.gameObject.SetActive(offer);
+                removeAdsButton.interactable = store.IsReady;
+                if (removeAdsLabel != null)
+                    removeAdsLabel.text = string.IsNullOrEmpty(store.RemoveAdsPrice)
+                        ? Loc.T("<u>Xoá quảng cáo</u>")
+                        : Loc.F("<u>Xoá quảng cáo · {0}</u>", store.RemoveAdsPrice);
+            }
+            if (restoreButton != null)
+                restoreButton.gameObject.SetActive(Application.platform == RuntimePlatform.IPhonePlayer && !store.OwnsRemoveAds);
         }
 
         private static string InProgress(string label, bool inProgress) => inProgress ? Loc.F("{0} · đang dở", label) : label;
 
-        private void OnEnable() => Loc.Changed += Refresh;
-        private void OnDisable() => Loc.Changed -= Refresh;
+        private void OnEnable()
+        {
+            Loc.Changed += Refresh;
+            Services.Purchases.Changed += RefreshPurchases; // the store answers (price, purchase) while the menu is open
+            RefreshPurchases();
+        }
+
+        private void OnDisable()
+        {
+            Loc.Changed -= Refresh;
+            Services.Purchases.Changed -= RefreshPurchases;
+        }
     }
 }

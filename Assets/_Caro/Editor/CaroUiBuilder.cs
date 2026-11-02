@@ -45,6 +45,12 @@ namespace Caro.EditorTools
         [MenuItem("Caro/Build UI (mockups)")]
         public static void Build()
         {
+            // The builder destroys and recreates the whole UI and saves the scene: only possible outside Play mode
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                EditorUtility.DisplayDialog("Caro", "Thoát Play mode trước khi chạy Build UI.\nStop Play mode before running Build UI.", "OK");
+                return;
+            }
             PrepareArt();
             _font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/_Caro/Art/Fonts/Pangolin SDF.asset");
             var canvas = GameObject.Find("UI Canvas");
@@ -122,6 +128,8 @@ namespace Caro.EditorTools
             var sett = Btn(safe, "SettingsButton", "gray", 560, 1280, 780, 150, "Cài đặt", "icons/settings_gear_clean_edges", 100);
 
             var scores = BuildRecentScores(safe);
+
+            // "Remove Ads" lives in the settings popup (BuildSettings), not on the menu
 
             Pic(safe, "YellowStar", "doodles/yellow_star", 955, 1500, 70, 10);
             Pic(safe, "Pencil", "doodles/pencil_large", 965, 1760, 110, 0);
@@ -307,6 +315,14 @@ namespace Caro.EditorTools
             Set(gs, "statusText", status);
             Set(gs, "boardSizeText", size);
             Set(gs, "undoButton", undo);
+            Set(gs, "undoLabel", Dyn(Label(undo)));
+            if (SprOpt("icons/ad_badge") != null)
+            {
+                // "Watch an ad" badge pinned to the top-right corner of the undo button
+                var badge = PicLocal(undo.transform, "AdBadge", "icons/ad_badge", 185, -42, 72);
+                badge.gameObject.SetActive(false);
+                Set(gs, "undoAdBadge", badge.gameObject);
+            }
             Set(gs, "newGameButton", newGame);
             Set(gs, "fitButton", fit);
             Set(gs, "areaTop", top);
@@ -431,8 +447,15 @@ namespace Caro.EditorTools
             Txt(content, "ThemeTitle", "Giao diện", 200, 1290 + d, 600, 80, 48, Ink, TextAlignmentOptions.MidlineLeft, pivotLeft: true);
             var thumbs = new[] { "themes/theme_notebook", "themes/theme_grid", "themes/theme_minimal_dark" };
             for (int i = 0; i < 3; i++)
-                Pic(content, "ThemePreview" + i, thumbs[i], 560 + (i - 1) * 300, 1530, 160);
-            var theme = Options(content, "Theme", new[] { "Mặc định", "Giấy ô li", "Tối giản" }, 1690, 270, 90, 38);
+                Pic(content, "ThemePreview" + i, thumbs[i], 560 + (i - 1) * 300, 1505, 140);
+            var theme = Options(content, "Theme", new[] { "Mặc định", "Giấy ô li", "Tối giản" }, 1650, 270, 90, 38);
+
+            // Remove Ads: a button with the store price; once bought, a thank-you note in its place
+            string noAdsIcon = SprOpt("icons/no_ads") != null ? "icons/no_ads" : null;
+            var removeAds = Btn(content, "RemoveAdsButton", "yellow", 560, 1770, 640, 100, "Xoá quảng cáo", noAdsIcon, noAdsIcon != null ? 64 : 0, 42);
+            var adsRemoved = Dyn(Txt(content, "AdsRemovedNote", "Đã tắt quảng cáo. Cảm ơn bạn!", 560, 1770, 900, 70, 40, Quiet, TextAlignmentOptions.Center));
+            adsRemoved.gameObject.SetActive(false);
+            var restore = TextButton(content, "RestoreButton", "<u>Khôi phục giao dịch</u>", 560, 1835, 500, 50, 30);
             language.transform.SetAsLastSibling();
 
             // Opening motion: an Animator clip (fade and scale-in), kept invisible on the first frames while the
@@ -458,6 +481,10 @@ namespace Caro.EditorTools
             Set(ss, "firstPlayerNote", firstNote);
             Set(ss, "difficulty", diff);
             Set(ss, "theme", theme);
+            Set(ss, "removeAdsButton", removeAds);
+            Set(ss, "removeAdsLabel", Dyn(Label(removeAds)));
+            Set(ss, "adsRemovedNote", adsRemoved);
+            Set(ss, "restoreButton", restore);
             return ss;
         }
 

@@ -38,9 +38,23 @@ and is fully unit-tested.
   3. **Iterative-deepening alpha-beta** (negamax with alpha-beta pruning) up to depth 8, keeping the best move
      from the last fully searched depth when time runs out.
 
+## Ads and in-app purchases (branch `feature/monetization`)
+
+- **LevelPlay (Unity Ads Mediation 9.6)**: rewarded, interstitial and banner, with load retries on exponential backoff
+  (2 s → 64 s), a callback that always fires exactly once (closed, failed or not ready), a short wait for rewards that
+  arrive after the close, and game audio paused while a full-screen ad is up.
+- **Unity IAP 5**: one non-consumable, **Remove Ads** — two-step purchase (pending → grant → confirm), idempotent
+  grant so a re-delivered order is harmless, owned purchases restored from the store at startup, Restore button on iOS.
+- **Ad placement** ("balanced"): vs the AI the first undo of each game is free, later ones cost a rewarded ad (free if no
+  ad is available — ad fill never blocks the player); an interstitial only between games, at most every 3 games and
+  3 minutes, never right after launch; the banner only while the board is on screen, and the UI moves up above it.
+- **Architecture**: the rules live in `Caro.Monetization`, a plain C# assembly (`AdPolicy`, `IAdService`,
+  `IPurchaseService`) with no SDK or engine dependency, covered by EditMode tests. The SDK code
+  (`Assets/_Caro/Monetization`) registers itself at startup; without it the game runs on no-op services.
+
 ## Tests
 
-**57 EditMode tests** (NUnit, Unity Test Framework) cover the pure C# core and AI:
+**66 EditMode tests** (NUnit, Unity Test Framework) cover the pure C# core and AI:
 
 | Area | What is checked |
 | --- | --- |
@@ -48,9 +62,10 @@ and is fully unit-tested.
 | Win detection | Five in a row in all four directions, gaps, six-in-a-row (no overline rule), edges and corners, game end |
 | Board growth, undo, draw | Expanding toward each edge up to 20 × 20, undo after a win, full-board draw |
 | AI tactics | Takes an immediate win, blocks fours and open threes, finds double-four wins, always plays legal moves, Easy's deliberate mistakes |
+| Ad policy | Free undo per game, rewarded after it, interstitial spacing by games and time, Remove Ads, no-op services |
 | AI tournaments | Levels play each other (3 slow tests, marked `Explicit`) |
 
-The 54 regular tests all pass. Of the 3 tournament tests, *Medium crushes Easy* and *Easy is beatable by a novice* pass;
+The 63 regular tests all pass. Of the 3 tournament tests, *Medium crushes Easy* and *Easy is beatable by a novice* pass;
 **Hard vs Medium currently wins 9 of 12 games against a target of 11**, so Hard is still being tuned.
 
 Run them in Unity with **Window → General → Test Runner → EditMode**, or from the menu **Caro → Run EditMode tests**.
@@ -71,6 +86,8 @@ The UI is generated from the art in `Assets/_Caro/Art/UIv2` by the editor menu *
 | `Assets/_Caro/Scripts/Core` | Rules: board, growing grid, win check, undo (`Caro.Core`) |
 | `Assets/_Caro/Scripts/AI` | AI: move ranking, VCF, alpha-beta (`Caro.AI`) |
 | `Assets/_Caro/Scripts/UI` | Screens, board rendering, input, sound (`Caro.Game`) |
+| `Assets/_Caro/Scripts/Monetization` | Ad rules and service interfaces (`Caro.Monetization`) |
+| `Assets/_Caro/Monetization` | LevelPlay and Unity IAP implementations, started before the first scene |
 | `Assets/_Caro/Editor` | UI builder and test tooling |
 | `Assets/_Caro/Tests` | EditMode tests (`Caro.Tests`) |
 | `Assets/_Caro/Art`, `Assets/_Caro/Audio` | Sprites, fonts, shader, sound effects |

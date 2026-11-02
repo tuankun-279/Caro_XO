@@ -73,6 +73,12 @@ namespace Caro.Game
             { "Máy – Vừa", "Bot – Medium" },
             { "Máy – Khó", "Bot – Hard" },
             { "2 người", "2 players" },
+            { "<u>Xoá quảng cáo</u>", "<u>Remove ads</u>" },
+            { "<u>Xoá quảng cáo · {0}</u>", "<u>Remove ads · {0}</u>" },
+            { "<u>Khôi phục giao dịch</u>", "<u>Restore purchases</u>" },
+            { "Xoá quảng cáo", "Remove ads" },
+            { "Xoá quảng cáo · {0}", "Remove ads · {0}" },
+            { "Đã tắt quảng cáo. Cảm ơn bạn!", "Ads removed. Thank you!" },
 
             // Mode selection
             { "Chọn chế độ chơi", "Choose a mode" },
@@ -91,6 +97,7 @@ namespace Caro.Game
             { "Chơi với máy - {0}", "Vs Bot - {0}" },
             { "Vừa màn hình", "Fit screen" },
             { "Đi lại", "Undo" },
+            { "Đi lại · xem QC", "Undo · watch ad" },
             { "Ván mới", "New game" },
             { "Tỉ số", "Score" },
             { "Máy đang nghĩ… {0}", "Bot is thinking… {0}" },

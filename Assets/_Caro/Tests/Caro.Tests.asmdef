@@ -4,6 +4,7 @@
     "references": [
         "Caro.Core",
         "Caro.AI",
+        "Caro.Monetization",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

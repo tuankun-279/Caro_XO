@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using Caro.AI;
 using Caro.Core;
+using Caro.Monetization;
 using Cysharp.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -15,6 +16,8 @@ namespace Caro.Game
     /// the score and the HUD. Each mode keeps its own game so the player can go to the menu and resume.
     /// The result and settings screens are full-screen: while one is shown the HUD and the board are hidden.
     /// The AI turn and the delayed result screen run as cancellable UniTasks.
+    /// Ads (see <see cref="AdPolicy"/>): against the AI, undos beyond the free one cost a rewarded ad; an
+    /// interstitial may show when leaving the result screen; the banner shows while the board is on screen.
     /// </summary>
     public class GameScreen : MonoBehaviour
     {
@@ -64,6 +67,10 @@ namespace Caro.Game
 
         [Header("Buttons")]
         [SerializeField] private UnityEngine.UI.Button undoButton;
+        [Tooltip("Label of the undo button; says when the next undo costs a rewarded ad")]
+        [SerializeField] private TMP_Text undoLabel;
+        [Tooltip("Small \"watch an ad\" badge on the undo button; shown while the next undo costs an ad")]
+        [SerializeField] private GameObject undoAdBadge;
         [SerializeField] private UnityEngine.UI.Button newGameButton;
         [Tooltip("Fit-to-screen button; only shown while zoomed in (replaces the board size line)")]
         [SerializeField] private UnityEngine.UI.Button fitButton;
@@ -112,6 +119,9 @@ namespace Caro.Game
         private CancellationTokenSource _aiCts;      // non-null while the AI is thinking
         private CancellationTokenSource _resultCts;  // non-null while the result screen is pending
         private bool _settingsOpen;
+        private bool _covered;
+        private bool _showingAd;
+        private AdPolicy _adPolicy;
         private Vector2Int _measuredScreen;
         private Rect _measuredSafe;
 
@@ -162,6 +172,11 @@ namespace Caro.Game
 
         private void Awake()
         {
+            // Every undo is paid with a rewarded ad (no free undos), in both modes; "Remove Ads" makes undo free
+            _adPolicy = new AdPolicy(() => Time.realtimeSinceStartupAsDouble, () => Services.Purchases.OwnsRemoveAds)
+            {
+                FreeUndosPerGame = 0,
+            };
             board.GameStarted += OnGameAttached;
             if (undoButton != null) undoButton.onClick.AddListener(Undo);
             if (newGameButton != null) newGameButton.onClick.AddListener(NewGame);
@@ -178,10 +193,11 @@ namespace Caro.Game
             if (resultScreen != null)
             {
                 resultScreen.Hide();
-                // Leaving the result page turns the page (the menu and mode screens are changed inside the turn)
-                resultScreen.PlayAgainClicked += () => PageTurn.Run(NewGame);
+                // Leaving the result page turns the page (the menu and mode screens are changed inside the turn).
+                // It is also the natural break where an interstitial may show first (AdPolicy decides).
+                resultScreen.PlayAgainClicked += () => AfterBreak(() => PageTurn.Run(NewGame));
                 resultScreen.ReviewClicked += () => PageTurn.Run(() => { HideResult(); Refresh(); });
-                resultScreen.MenuClicked += GoToMenu;
+                resultScreen.MenuClicked += () => AfterBreak(GoToMenu);
                 resultScreen.ChangeDifficultyClicked += () => PageTurn.Run(() => { HideResult(); ChangeDifficultyRequested?.Invoke(); });
             }
         }
@@ -191,11 +207,13 @@ namespace Caro.Game
         {
             _settingsOpen = true;
             UpdateInput(); // the settings popup opens over the game, which stays visible (blurred) behind it
+            UpdateBanner();
             // Playing the AI: changing "who moves first" starts a new game right away
             settingsScreen.Open(_mode == MatchMode.VsAI, () =>
             {
                 _settingsOpen = false;
                 SetCovered(resultScreen != null && resultScreen.IsShown);
+                UpdateBanner();
                 _measuredScreen = default;
                 Refresh();
             }, OnFirstPlayerChosen);
@@ -204,11 +222,18 @@ namespace Caro.Game
         /// <summary>Hides (or shows again) the HUD and the board behind a full-screen page.</summary>
         private void SetCovered(bool covered)
         {
+            _covered = covered;
             if (hud != null) hud.SetActive(!covered);
             board.gameObject.SetActive(!covered);
+            UpdateBanner();
         }
 
+        /// <summary>The banner shows only while the board itself is on screen (not under the result or settings page).</summary>
+        private void UpdateBanner() =>
+            Services.Ads.SetBannerVisible(isActiveAndEnabled && !_covered && !_settingsOpen);
+
         private Vector2 _measuredCanvasSize;
+        private float _measuredBanner;
 
         private void LateUpdate()
         {
@@ -217,8 +242,11 @@ namespace Caro.Game
             var screen = new Vector2Int(Screen.width, Screen.height);
             var canvasSize = canvasRT != null ? canvasRT.rect.size : Vector2.zero;
             if (hud != null && !hud.activeInHierarchy) return;
-            if (screen == _measuredScreen && Screen.safeArea == _measuredSafe && canvasSize == _measuredCanvasSize) return;
+            float banner = Services.Ads.BannerHeightPixels; // the banner moves the bottom bar up (SafeArea)
+            if (screen == _measuredScreen && Screen.safeArea == _measuredSafe && canvasSize == _measuredCanvasSize
+                && Mathf.Approximately(banner, _measuredBanner)) return;
             _measuredScreen = screen;
+            _measuredBanner = banner;
             _measuredSafe = Screen.safeArea;
             _measuredCanvasSize = canvasSize;
             MeasureBoardArea();
@@ -262,6 +290,7 @@ namespace Caro.Game
             Loc.Changed += Refresh;
             var cam = Camera.main;
             if (cam != null) { _savedBackdrop = cam.backgroundColor; cam.backgroundColor = backdrop; _backdropSet = true; }
+            UpdateBanner();
         }
 
         private void OnDisable()
@@ -269,6 +298,7 @@ namespace Caro.Game
             if (_backdropSet && Camera.main != null) Camera.main.backgroundColor = _savedBackdrop;
             _backdropSet = false;
             Loc.Changed -= Refresh;
+            Services.Ads.SetBannerVisible(false);
             // Leaving the game screen: stop the AI and drop the pending popup. Both resume on return.
             CancelAI();
             CancelResult();
@@ -298,6 +328,30 @@ namespace Caro.Game
             NewGame();
         }
 
+        /// <summary>
+        /// Runs <paramref name="next"/> after an interstitial when the ad policy allows one and an ad is loaded,
+        /// otherwise right away. The interstitial callback always runs, so the game always moves on.
+        /// </summary>
+        private void AfterBreak(Action next)
+        {
+            if (_showingAd) return;
+            if (!_adPolicy.ShouldShowInterstitial() || !Services.Ads.IsInterstitialReady)
+            {
+                next();
+                return;
+            }
+            _adPolicy.OnInterstitialShown();
+            _showingAd = true;
+            UpdateInput();
+            Services.Ads.ShowInterstitial(Placements.GameOver, () =>
+            {
+                _showingAd = false;
+                if (this == null) return;
+                UpdateInput();
+                next();
+            });
+        }
+
         private void GoToMenu() => PageTurn.Run(() =>
         {
             HideResult();
@@ -310,6 +364,7 @@ namespace Caro.Game
         {
             HideResult();
             CancelAI();
+            _adPolicy.OnGameStarted();
             if (_mode == MatchMode.TwoPlayer)
             {
                 // Alternate the first player every game
@@ -328,7 +383,34 @@ namespace Caro.Game
 
         public void Undo()
         {
-            if (_game == null) return;
+            if (_game == null || _showingAd) return;
+
+            // An undo is paid with a rewarded ad (both modes) unless the player owns "Remove Ads"
+            if (HasUndoableMove() && _adPolicy.UndoNeedsAd())
+            {
+                if (Services.Ads.IsRewardedReady)
+                {
+                    HideResult();
+                    CancelAI();
+                    _showingAd = true;
+                    UpdateInput();
+                    var game = _game;
+                    Services.Ads.ShowRewarded(Placements.Undo, rewarded =>
+                    {
+                        _showingAd = false;
+                        if (this == null) return;                    // screen destroyed while the ad was up
+                        if (rewarded && game == _game) DoUndo();
+                        else { Refresh(); MaybeStartAI(); }          // skipped: the AI continues if it was its turn
+                    });
+                    return;
+                }
+                // No ad available (offline, no fill): the player is never blocked by ad delivery, so the undo is free
+            }
+            DoUndo();
+        }
+
+        private void DoUndo()
+        {
             HideResult();
             CancelAI();
             int before = _game.History.Count;
@@ -348,7 +430,11 @@ namespace Caro.Game
                     if (last == _human) break;
                 }
             }
-            if (_game.History.Count < before && Feedback.Instance != null) Feedback.Instance.Erase();
+            if (_game.History.Count < before)
+            {
+                _adPolicy.OnUndoUsed();
+                if (Feedback.Instance != null) Feedback.Instance.Erase();
+            }
             Refresh();
             MaybeStartAI();
         }
@@ -509,6 +595,7 @@ namespace Caro.Game
             {
                 if (_game == null || !_game.IsOver) return; // undone or left while the page was being captured
                 SetCovered(true);
+                _adPolicy.OnGameFinished();
                 resultScreen.Show(kind, title, subtitle, LeftNameText(), RightNameText(),
                     ScoreOf(LeftPiece), ScoreOf(RightPiece), PieceColor(LeftPiece), PieceColor(RightPiece),
                     _mode == MatchMode.VsAI);
@@ -598,6 +685,12 @@ namespace Caro.Game
 
         // ================= HUD =================
 
+        /// <summary>The next undo will show a rewarded ad (only said when an ad is actually ready).</summary>
+        private bool UndoCostsAd() => _adPolicy.UndoNeedsAd() && Services.Ads.IsRewardedReady;
+
+        /// <summary>There is a move the undo button can take back in this mode.</summary>
+        private bool HasUndoableMove() => _mode == MatchMode.TwoPlayer ? _game.History.Count > 0 : HasHumanMove();
+
         public static string DifficultyName(Difficulty d) =>
             Loc.T(d == Difficulty.Easy ? "Dễ" : d == Difficulty.Medium ? "Vừa" : "Khó");
 
@@ -609,7 +702,7 @@ namespace Caro.Game
 
         private void UpdateInput()
         {
-            bool popupBlocking = _resultCts != null || (resultScreen != null && resultScreen.IsShown) || _settingsOpen;
+            bool popupBlocking = _resultCts != null || (resultScreen != null && resultScreen.IsShown) || _settingsOpen || _showingAd;
             board.InputEnabled = !popupBlocking && !IsAITurn;
         }
 
@@ -657,6 +750,10 @@ namespace Caro.Game
 
             if (undoButton != null)
                 undoButton.interactable = _mode == MatchMode.TwoPlayer ? _game.History.Count > 0 : HasHumanMove();
+            bool costsAd = UndoCostsAd();
+            if (undoAdBadge != null) undoAdBadge.SetActive(costsAd);
+            if (undoLabel != null) // with the badge art the label stays short; without it the text says so
+                undoLabel.text = Loc.T(costsAd && undoAdBadge == null ? "Đi lại · xem QC" : "Đi lại");
         }
     }
 }
