@@ -454,8 +454,12 @@ namespace Caro.EditorTools
             string noAdsIcon = SprOpt("icons/no_ads") != null ? "icons/no_ads" : null;
             var removeAds = Btn(content, "RemoveAdsButton", "yellow", 560, 1770, 640, 100, "Xoá quảng cáo", noAdsIcon, noAdsIcon != null ? 64 : 0, 42);
             var adsRemoved = Dyn(Txt(content, "AdsRemovedNote", "Đã tắt quảng cáo. Cảm ơn bạn!", 560, 1770, 900, 70, 40, Quiet, TextAlignmentOptions.Center));
+            if (SprOpt("icons/heart_thanks") != null)
+                PicLocal(adsRemoved.transform, "Heart", "icons/heart_thanks", -290, 0, 56); // beside the thank-you words
             adsRemoved.gameObject.SetActive(false);
             var restore = TextButton(content, "RestoreButton", "<u>Khôi phục giao dịch</u>", 560, 1835, 500, 50, 30);
+            if (SprOpt("icons/restore") != null)
+                PicLocal(restore.transform, "Icon", "icons/restore", -190, 0, 40);
             language.transform.SetAsLastSibling();
 
             // Opening motion: an Animator clip (fade and scale-in), kept invisible on the first frames while the
