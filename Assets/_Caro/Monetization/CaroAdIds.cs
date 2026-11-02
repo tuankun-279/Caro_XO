@@ -13,8 +13,8 @@ public static class CaroAdIds
     public const string Interstitial = "IOS_INTERSTITIAL_AD_UNIT_ID";
     public const string Banner = "IOS_BANNER_AD_UNIT_ID";
 #else
-    public const string AppKey = "ANDROID_APP_KEY";
-    public const string Rewarded = "ANDROID_REWARDED_AD_UNIT_ID";
+    public const string AppKey = "2930e0815";
+    public const string Rewarded = "7txhi84ckwbyohoj";
     public const string Interstitial = ""; // off
     public const string Banner = "";       // off
 #endif
