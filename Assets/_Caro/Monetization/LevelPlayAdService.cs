@@ -71,15 +71,19 @@ public sealed class LevelPlayAdService : MonoBehaviour, IAdService
         _rewarded.OnAdClosed += OnRewardedClosed;
         _rewarded.LoadAd();
 
-        _interstitial = new LevelPlayInterstitialAd(CaroAdIds.Interstitial);
-        _interstitial.OnAdLoaded += OnInterstitialLoaded;
-        _interstitial.OnAdLoadFailed += OnInterstitialLoadFailed;
-        _interstitial.OnAdDisplayed += OnFullScreenDisplayed;
-        _interstitial.OnAdDisplayFailed += OnInterstitialDisplayFailed;
-        _interstitial.OnAdClosed += OnInterstitialClosed;
-        if (!_adsRemoved()) _interstitial.LoadAd();
+        // A format whose ad unit ID is empty is turned off (CaroAdIds): it is never created or loaded
+        if (!string.IsNullOrEmpty(CaroAdIds.Interstitial))
+        {
+            _interstitial = new LevelPlayInterstitialAd(CaroAdIds.Interstitial);
+            _interstitial.OnAdLoaded += OnInterstitialLoaded;
+            _interstitial.OnAdLoadFailed += OnInterstitialLoadFailed;
+            _interstitial.OnAdDisplayed += OnFullScreenDisplayed;
+            _interstitial.OnAdDisplayFailed += OnInterstitialDisplayFailed;
+            _interstitial.OnAdClosed += OnInterstitialClosed;
+            if (!_adsRemoved()) _interstitial.LoadAd();
+        }
 
-        if (!_adsRemoved()) CreateBanner();
+        if (!string.IsNullOrEmpty(CaroAdIds.Banner) && !_adsRemoved()) CreateBanner();
     }
 
     private void OnInitFailed(LevelPlayInitError error)
